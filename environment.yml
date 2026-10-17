@@ -1,0 +1,31 @@
+name: data_science_R
+channels:
+  - defaults
+dependencies:
+  - r-ggplot2
+  - r-base
+  - r-moments
+  - r-qdap
+  - r-knitr
+  - r-rmarkdown
+  - r-tidyverse
+  - r-kableextra
+  - r-codetools
+  - quarto
+  - r-e1071
+  - r-bestnormalize
+  - r-factoextra
+  - r-dslabs
+  - r-fitdistrplus
+  - scikit-learn
+  - scipy
+  - numpy
+  - python
+  - pandas
+  - matplotlib
+  - r-rpart.plot
+  - r-grf
+  - r-ranger
+  - r-rpart
+  - r-showtext
+prefix: /home/vrahu/miniconda3/envs/data_science_R
