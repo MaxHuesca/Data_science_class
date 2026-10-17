@@ -1,0 +1,20 @@
+#general large files
+*.csv
+*files
+*.docx
+*cache
+*.pdf
+
+#data files
+data/**/*.csv
+data/*.fastq
+
+#docs files 
+Docs/*.*.docx
+
+#Tareas files
+Tareas/*.docx
+
+#src temp files
+*files
+*.docx
