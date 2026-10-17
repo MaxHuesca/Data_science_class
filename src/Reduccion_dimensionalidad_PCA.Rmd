@@ -1,0 +1,231 @@
+---
+title: "Reduccion de dimensionalidad"
+author: "Elizabeth Sulvarán Guel y Carlos Francisco Méndez"
+date: "<small>`r Sys.Date()`</small>"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: yes
+    cod_folding: hide
+    center: yes
+    theme: sandstone
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+# Llamar librerías 
+Llamamos a la librerías requeridas para los análisis 
+```{r}
+library(ggplot2) # gráficas
+library(qdap) # manipulacion de datos
+library(dslabs) # datos PCA
+library(factoextra) # gráficas PCA
+```
+
+# PCA 
+El PCA (Principal Component Analysis o análisis de Componentes Principales) es un método estadístico que nos permite reducir las dimensiones (es decir, las variables o las característica) de un conjunto de datos, pero preservando la mayor proporción de la varianza original de estos. 
+
+Imaginemos un conjunto de datos de *n* observaciones y *m* característica o variables. Debido a que cada variable representa una dimensión, nuestro conjunto de datos tiene *m* dimensiones. El PCA busca un número de característica menores a las originales pero que expliquen una proporción de la varianza muy similar a los datos originales. Cada una de estas nuevas característica es un componente principal. 
+
+El PCA es un algoritmo dentro de los muchos que existen para aprendizaje no supervisado y es muy útil cuando queremos realizar regresiones líneales o aprendizaje supervisado en conjuntos de datos muy grandes.  
+
+En este caso, vamos a analizar los datos *"tissue_gene_expression"* de la librería *dslabs*. Podemos observar que estos datos están en una lista de dos elementos, x y y. En x encontramos valores de expresión de genes en muchas réplicas biológicas de diferentes tejidos, y en y encontramos el tejido al que pertenecen.   
+```{r}
+names(tissue_gene_expression)
+tissue_gene_expression$x[1:7, 1:7] #Imprimimos las primeras 7 fila y columnas de los datos de expresion
+tissue_gene_expression$y[1:7] # Imprimimos los primeros 7 tejidos asociados a cada observacion. 
+```
+
+Dimensionalidad de datos y distribución de categorías
+```{r}
+dim(tissue_gene_expression$x)
+table(tissue_gene_expression$y)
+```
+Notamos que tenemos 189 observaciones (replicas biologicas de tejidos) y 500 característica (genes). Asimismo, observamos que no tenemos el mismo número de replicas biológicas para cada tejido. La placenta es el tejido que menos replicas tiene, con 6; y el riñón el que tiene más, con 39. 
+
+
+Lo primero que vamos a hacer, es cambiar los nombres de los tejidos de ingles a español. Para esto, vamos a utilizar la función *multigsub()*
+```{r}
+tejidos <- c("Cerebelo", "Colon", "Endometrio", "Hipocampo", "Riñón", "Hígado", "Placenta")
+tissue_gene_expression$y <- as.character(tissue_gene_expression$y)
+tissue_gene_expression$y <- multigsub(unique(tissue_gene_expression$y), 
+                                      tejidos, 
+                                      tissue_gene_expression$y)
+table(tissue_gene_expression$y) # observamos que el reemplazo se realizo de forma exitosa. 
+```
+
+
+R tiene dos funciones incluidas para hacer un PCA: *princomp()* y *prcomp()*. En esencia son lo mismo, los resultados que regresan son iguales, pero cambian algunos detalles dentro de la forma en la que calculan los componentes principales. Usualmente, se prefiere la función *prcomp()* por dos razones: 
+
+-Tiene mayor exactitud. 
+-Puede realizar PCAs aunque los datos tengan más variables que observaciones (como los que estamos trabajando ahora), a diferencia de *princomp()*. 
+
+### PCA generado con *prcomp()*
+Realizamos un PCA de los datos con la función *prcomp()*. Observamos que la función regresa una lista con 5 elementos: sdev, rotation, center, scale y x. Vamos a ver que contiene cada uno. 
+```{r}
+PCA <- prcomp(tissue_gene_expression$x)
+names(PCA)
+```
+
+$x contiene los principal component scores. Estos son los datos que vamos a utilizar para visualizar. 
+```{r}
+PCA$x[1:7, 1:7] # primeras 7 filas y columnas del PCA realizado con prcomp
+```
+
+$sdev contiene la desviación estandar de cada componente principal, que nos sirve para encontrar la proporción de la varianza explicada por cada uno. Conocer qué tanta varianza explica cada PC es muy útil para escoger un número de componentes principales, que veremos más abajo. Por ahora, es importante resaltar que las desviaciones estandar de cada componente principal van en orden decreciente, por lo que el primer PC siempre es el que más desviación estandar tiene (y el que más varianza explica), y el último el que menos.
+```{r}
+PCA$sdev[1:7] # primeros 7 valores de desviación estandar de cada PC 
+```
+
+$center contiene las medias de cada columna. Por lo tanto, indica los valores que se le restaron a los datos originales para centrarlos. 
+```{r}
+PCA$center[1:7] # primeras 7 medias
+```
+
+$rotation contiene los eigenvectores. 
+```{r}
+PCA$rotation[1:7, 1:7] # primeras 7 filas de los primeros 7 eigenvectores del PCA generado con prcomp()
+```
+
+### Visualización del PCA
+##### gráficas de dispersión 
+Ahora que ya tenemos el PCA y sabemos qué contiene, vamos a visualizar los dos primeros componentes. 
+```{r}
+PrinComps <- as.data.frame(PCA$x) # convertimos los componentes en un dataframe
+PrinComps$Tissue <- tissue_gene_expression$y # agregamos los grupos de tejidos
+ggplot(PrinComps, aes(x = PC1, y = PC2, color = Tissue)) + # graficamos con ggplot
+  geom_point() +
+  labs(title = "PCA Tejidos", x = "PC1", y = "PC2", color = "Tejido")
+```
+
+Podemos observar a simple vista que con los primeros dos componentes, se agrupan los datos que pertenecen a cerebelo e hipocampo de un lado de la gráfica. Asimismo, en otro lugar estan todos los puntos del hígado. El colon, endometrio, placenta y riñón se agrupan.
+
+También podemos agregar elipses al rededor de los grupos
+```{r}
+ggplot(PrinComps, aes(x = PC1, y = PC2, color = Tissue)) +
+  geom_point() +
+  stat_ellipse() +
+  labs(title = "PCA Tejidos", x = "PC1", y = "PC2", color = "Tejido")
+```
+
+##### Visualización de la varianza explicada
+Primero, vamos a crear una paleta de colores. 
+```{r}
+set.seed(42)
+
+# primera forma, utilizando los colores de rainbow. 
+#color <- sample(rainbow(1000), length(PCA$sdev))
+
+# segunda forma, utilizando todos los colores presentes, a exclusión de los grises. esta fue la forma que yo elegí, pero ambas formas funcionan bien para crear paletas de colores grandes.
+color <- grDevices::colors()[grep('gr(a|e)y', grDevices::colors(), invert = T)]
+color <- sample(color, length(PCA$sdev))
+```
+
+Ahora vamos a obtener la proporción de la varianza explicada. Para esto, debemos elevar al cuadrado los valores de desviación estandar, y obtener el porcentaje de la proporción explicada por cada PC, dividiendo cada valor entre la suma de todos los valores y multiplicándolo por 100. 
+
+```{r}
+exp_var <- PCA$sdev^2
+exp_var <- (exp_var / sum(exp_var)) * 100 # proporción de la varianza explicada
+PC <- 1:length(PCA$sdev) # número de componentes
+exp_var <- data.frame(exp_var, PC) # Lo unimos en un dataframe
+head(exp_var) 
+
+ggplot(exp_var, aes(x = PC, y = exp_var)) +
+  geom_bar(stat = "identity", fill = color) +
+  labs(title = "proporción de la varianza explicada por cada PC", x = "Componente Principal", y = "Varianza explicada (%)")
+```
+
+Observamos que el primer componente principal representa el 33.6% de la varianza, el segundo el 13.7% y asi sucesivamente. ¿Como podemos elegir un número de componentes? Muchas veces, si el PCA es el objetivo final del análisis, por cuestiones de visualizacion, elegimos solo 2 o 3 componentes, que en nuestro caso expresan el 47.4% de la varianza (nada mal). Sin embargo, si el PCA se esta realizando para posteriormente utilizar un algoritmo de aprendizaje supervisado o una regresion líneal, podemos elegir el número de componentes que sumen una mayor proporción de la varianza. Usualmente, se utiliza una varianza total de entre 70% y 90%. Para esto, debemos obtener la suma cumulativa de la proporción explicada de cada PC.
+
+```{r}
+exp_var$var_cum <- cumsum(exp_var$exp_var) # suma cumulativa con función cumsum()
+
+for(lim in c(70, 75, 80, 90)){ # vamos a obtener el número de componentes y a gráficarlos para 4 valores de proporción cumulativa: 70, 75, 80 y 90. 
+  print(exp_var[exp_var$var_cum >= lim, 2][1]) # vemos cual es el componente que otorga la proporción de la varianza esperada
+  plot <- ggplot(exp_var, aes(x = PC, y = var_cum)) + # graficamos
+    geom_bar(stat = "identity", fill = color) +
+    labs(title = "Varianza cumulativa explicada por cada PC", x = "Componente Principal", y = "Varianza cumulativa explicada") + 
+    geom_hline(yintercept = lim) # colocamos una línea en la proporción esperada
+  print(plot)
+}
+
+```
+
+Encontramos que 6 componentes expresan el 70% de la varianza, 7 el 75%, 9 el 80% y 25 el 90%. Aquí ya redujimos la dimensionalidad de los datos originales de 500 a 6, 7, 9 y 25 variables o dimensiones, dependiendo de que tanta varianza queramos. 
+
+##### Contribución de las variables al PCA
+Muchas veces queremos saber cuales son las variables que más están influyendo en los resultados observados. Para esto, podemos utilizar la función *fviz_pca_var()* de la librería *factoextra*, que funciona para graficar. 
+```{r}
+library(ggplot2)
+# Asegúrate de tener también cargado factoextra si no lo hiciste en el set_up
+library(factoextra)
+is_ggplot <- ggplot2::is.ggplot
+
+fviz_pca_var(PCA, col.var = "contrib") + # graficamos
+  scale_color_gradient(low = "blue", high = "red") + # escala de color para la contribución
+  labs(title = "Contribución de cada variable al PCA", # cambiamos textos de la gráfica
+       x = paste("PC1 ", "(", round(exp_var$exp_var[1], 2), "%)", sep =""),
+       y = paste("PC2 ", "(", round(exp_var$exp_var[2], 2), "%)", sep =""),
+       color = "Contribución")
+```
+
+En esta gráfica, podemos observar cuales son las variables que contribuyen más significativamente al análisis, siendo las de color rojo. Asimismo, las variables que se agrupan cerca entre ellas son las que se encuentran más correlacionadas, pues tienen patrónes de expresión similares. Las variables que más contribuyen a la formación de cada componente son las que se encuentren más paralelas a ese eje. En este caso, notamos que GPM6B es la variable que más contribuye al primer componente, y HAMP al segundo. Sin embargo, esta gráfica es difícil de visualizar, pues hay muchas variables amontonadas. Para esto, podemos seleccionar algunas cambiando el parametro *select.var* y especificando una lista con contrib = el número que queremos. 
+
+```{r}
+fviz_pca_var(PCA, col.var = "contrib", # graficamos 
+             select.var = list(contrib = 30)) + # cambiamos el número de variables
+  scale_color_gradient(low = "blue", high = "red") + # escala de color
+  labs(title = "Contribución de cada variable al PCA", # cambiamos textos de la gráfica
+       x = paste("PC1 ", "(", round(exp_var$exp_var[1], 2), "%)", sep =""),
+       y = paste("PC2 ", "(", round(exp_var$exp_var[2], 2), "%)", sep =""),
+       color = "Contribución")
+```
+
+Esta gráfica es mucho más legible, aquí podemos entender mucho mejor cuáles son las variables que más contribuyen al análisis. 
+Por último, podemos añadir los puntos de las observaciones. 
+
+```{r}
+fviz_pca_biplot(PCA, # objeto a visualizar
+                geom.ind = "point", # indicamos que queremos puntos (también puede ser texto)
+                fill.ind = tissue_gene_expression$y, # le pasamos los tejidos
+                pointshape = 21, # elegimos el tipo de puntos
+                addEllipses = TRUE, # añadimos las elipses
+                
+                select.var = list(contrib = 30), # seleccionamos 30 variables
+                col.var = "contrib") + # queremos la contribución de cada variable
+ scale_color_gradient(low = "blue", high = "red") + # escala para la contribución
+  labs(title = "Contribución de cada variable al PCA", # cambiamos textos de la gráfica
+       x = paste("PC1 ", "(", round(exp_var$exp_var[1], 2), "%)", sep =""),
+       y = paste("PC2 ", "(", round(exp_var$exp_var[2], 2), "%)", sep =""),
+       color = "Contribución", fill = "Tejido")
+```
+
+Ahora que ya estamos visualizando las observaciones y las variables, es donde entra la interpretación biologica. Podemos empezar analizando a qué se debe la separacion en conjunto de algunas variables con los tejidos que provienen del cerebro.  [El gen GPM6B](https://www.uniprot.org/uniprot/Q13491) se llama Neuronal membrane glycoprotein M6-b y esta involucrado en el desarrollo neuronal, lo cual explica su asociación con los tejidos cerebrales. El caso es similar para [El gen SV2B](https://www.uniprot.org/uniprot/Q7L1I2) (Synaptic vesicle glycoprotein 2B), cuya función se asocia a la secreción regulada de neuronas y células endócrinas. Por otro lado, el [El gen HAMP](https://www.uniprot.org/uniprot/P81172) (Hepcidin) es una hormona producida por el hígado cuya función es regular la absorción y distribución de hierro a otros tejidos. Debido a su producción hepática, es esperada su asociación con el tejido del hígado. Los mismos análisis pueden hacerse para otros genes de interés encontrados en la gráfica. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

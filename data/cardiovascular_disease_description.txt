@@ -1,0 +1,20 @@
+Description of attributes
+id: id number
+age_days: age in days
+age_year: age in years
+gender: gender (1 = women, 2 = men)
+height: height in cm
+weight: weight in kg
+ap_hi: systolic blood pressure
+ap_lo: diastolic blood pressure
+cholesterol: cholesterol (1 = normal, 2 = above normal, 3 = well above normal)
+gluc: glucose level (1 = normal, 2 = above normal, 3 = well above normal)
+smoke: whether patient smokes or not (0 = no, 1 = yes))
+alco: whether patient drinks alcohol or not (0 = no, 1 = yes)
+active: binary feature (0 = passive life, 1 = active life)
+cardio: Target variable, whether patient has cardiovascular disease or not (0 = no, 1 = yes)
+
+Enlaces con información del dataset:
+- https://www.kaggle.com/datasets/sulianova/cardiovascular-disease-dataset
+- https://github.com/caravanuden/cardio?tab=readme-ov-file
+

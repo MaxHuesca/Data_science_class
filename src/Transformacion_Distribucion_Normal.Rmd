@@ -1,0 +1,122 @@
+---
+title: "Transformación de datos a distribución normal"
+author: "Eli Sulvarán Guel y Carlos Francisco Méndez"
+date: "<small>`r Sys.Date()`</small>"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: yes
+    cod_folding: hide
+    center: yes
+    theme: sandstone
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+# Llamar librerías 
+Llamamos a la librerías requeridas para los análisis
+```{r}
+library(ggplot2) # gráficas
+library(e1071) # asimetría
+library(bestNormalize) # transformación de datos 
+library(fitdistrplus) # gráfica Cullen-Frey
+```
+
+# Transformación de datos
+Iniciaremos simulando dos conjuntos de datos, uno con distribución normal, y otro con distribución beta (https://en.wikipedia.org/wiki/Beta_distribution). 
+```{r}
+set.seed(42)
+datos_norm <- rnorm(n = 1000, mean = 0, sd = 1) # creamos una distribución normal
+datos_beta <- rbeta(n = 1000, shape1 = 1, shape2 = 5) # creamos una distribución beta
+datos <- data.frame(datos_norm, datos_beta) # juntamos las distribuciones en un dataframe
+head(datos) # visualizamos las primeras líneas
+```
+
+### Comparacion de datos que siguen una distribución normal y los que no la siguen.
+Vamos a visualizar los datos con ggplot.  
+```{r}
+ggplot(data = datos, aes(datos_norm)) + 
+  geom_histogram(aes(y = ..density..), bins = 100, color = "black", fill = "white") +
+  geom_density(alpha = 0.2, fill = "blue") + 
+  geom_vline(xintercept = mean(datos$datos_norm), color = "red", size = 1) +
+  geom_vline(xintercept = median(datos$datos_norm), color = "forestgreen", size = 1) +
+  labs(title = "Histograma datos que siguen una distribución normal", x = "Valores", y = "Frecuencia")
+
+ggplot(data = datos, aes(datos_beta)) + 
+  geom_histogram(aes(y = ..density..), bins = 100, color = "black", fill = "white") +
+  geom_density(alpha = 0.2, fill = "blue") + 
+  geom_vline(xintercept = mean(datos$datos_beta), color = "red", size = 1) +
+  geom_vline(xintercept = median(datos$datos_beta), color = "forestgreen", size = 1) +
+  labs(title = "Histograma datos que no siguen una distribución normal", x = "Valores", y = "Frecuencia")
+```
+
+También podemos verificar la asimetría (skewness) de nuestros datos, con la función *skewness()* de la librería *e1071*. 
+```{r}
+print("Datos con distribución normal")
+skewness(datos$datos_norm) # función skewness para verificar asimetría de datos normales
+print("Datos con distribución beta")
+skewness(datos$datos_beta) # función skewness para verificar asimetría de datos no normales
+```
+Si el valor de skewness es cercano a 0, significa que los datos son simétricos o aproximadamente simétricos. 
+
+Si el valor de skewness se encuentra entre 0.5 y 1 o -0.5 y -1, los datos son ligeramente asimétricos.
+
+Si el valor de skewness es mayor a 1 o menor a -1, los datos son muy asimétricos. 
+
+La asimetría negativa indica una "cola" hacia la izquierda de la distribución.
+
+La asimetría positiva indica una "cola" hacia la derecha de la distribución.
+
+En este caso, podemos observar que nuestros datos con distribución normal son simétricos, y nuestros datos de la distribución beta son muy asimétricos hacia la derecha (asimetría positiva). 
+
+### Metodos de transformación 
+Una vez que hemos verificado que nuestros datos son asimétricos, podemos transformarlos. Existen muchas formas de transformar datos. Los metodos más utilizados son la transformación con raiz cuadrada para datos ligeramente asimétricos, la transformación logarítmica para datos un poco más asimétricos, y la transformación inversa para datos muy asimétricos. 
+```{r}
+datos$raiz <- sqrt(datos$datos_beta) # transformación con raiz
+datos$log <- log10(datos$datos_beta) # transformación con logaritmo base 10
+datos$inversa <- 1 / datos$datos_beta # transformación con función inversa
+head(datos)
+```
+
+Ahora podemos gráficar los datos previamente transformados
+```{r}
+ggplot(data = datos, aes(raiz)) + 
+  geom_histogram(aes(y = ..density..), bins = 100, color = "black", fill = "white") +
+  geom_density(alpha = 0.2, fill = "blue") + 
+  geom_vline(xintercept = mean(datos$raiz), color = "red", size = 1) +
+  geom_vline(xintercept = median(datos$raiz), color = "forestgreen", size = 1) +
+  labs(title = "Histograma datos transformados con raiz", x = "Valores", y = "Frecuencia")
+
+ggplot(data = datos, aes(log)) + 
+  geom_histogram(aes(y = ..density..), bins = 100, color = "black", fill = "white") +
+  geom_density(alpha = 0.2, fill = "blue") + 
+  geom_vline(xintercept = mean(datos$log), color = "red", size = 1) +
+  geom_vline(xintercept = median(datos$log), color = "forestgreen", size = 1) +
+  labs(title = "Histograma datos transformados con logaritmo", x = "Valores", y = "Frecuencia")
+
+ggplot(data = datos, aes(inversa)) + 
+  geom_histogram(aes(y = ..density..), bins = 100, color = "black", fill = "white") +
+  geom_density(alpha = 0.2, fill = "blue") + 
+  geom_vline(xintercept = mean(datos$inversa), color = "red", size = 1) +
+  geom_vline(xintercept = median(datos$inversa), color = "forestgreen", size = 1) +
+  labs(title = "Histograma datos transformados con función inversa", x = "Valores", y = "Frecuencia")
+```
+
+De todas las gráficas, podemos observar que la que mejor se ve es la de los datos transformados con raiz cuadrada. 
+La función *bestNormalize()* de la paqueteria *bestNormalize* nos indica cual es la mejor transformación para nuestros datos. Ademas de las 3 mencionadas, tiene otras formas de transformar los datos, y funciones incluidas para cada una de ellas. 
+```{r}
+set.seed(42)
+bestNormalize(datos$datos_beta)
+```
+
+Podemos observar que bestNormalize nos sugiere utilizar la raiz, que fue el mismo método que habíamos notado previamente que transformaba a una dsitribución normal correctamente nuestros datos. 
+
+Por último, una función adicional que es útil para datos de los que no tenemos un conocimiento previo, es *descdist()* de la librería *fitdistrplus* que nos ayuda a saber qué tipo de distribución siguen nuestros datos mediante una gráfica Cullen-Frey.
+```{r}
+descdist(datos$datos_beta)
+descdist(datos$raiz)
+```
+

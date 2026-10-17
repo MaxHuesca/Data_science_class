@@ -1,0 +1,198 @@
+---
+title: "Exploración de datos"
+author: "Obed Escalante, Carlos Francisco Méndez"
+date: "15/03/2023"
+output:
+  html_document: 
+    toc: yes
+    toc_float:
+      collapsed: yes
+    cod_folding: hide
+    center: yes
+    theme: sandstone
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+# Librerías
+```{r}
+library(ggplot2)
+# Usamos una librería especializada para coeficiente de asimetría
+library(moments)
+```
+
+# Lectura de Archivos
+Para este trabajo utilizaremos datos de pacientes. Nos enfocaremos en la comparación entre bebedores y no bebedores. 
+```{r}
+hers <- read.table(
+  "/mnt/c/Users/vrahu/Documents/Ismadlsh/CCG/2026-S5/Data_Science/data/hersdata.csv",
+  sep = ",",
+  header = T
+)
+#Existen otras funciones como read.csv,read.csv2 o read.delim (sep= “,” “;” “\” respectivamente)
+```
+
+# Exploración inicial de los datos
+Para observar pocos registros de nuestros datos podemos utilizar head() para los primeros registros o tail() para los últimos.
+```{r}
+# El parámetro n es el número de registros que se van a mostrar
+head(hers, n = 6)
+#
+tail(hers)
+```
+Para observar las dimensiones de nuestros datos podemos utilizar las funciones dim() o nrow() y ncol().
+```{r}
+dim(hers)
+# Número de registros
+nrow(hers)
+# Número de atributos o características (columnas)
+ncol(hers)
+```
+Podemos utilizar la función table() para contabilizar cuántos registros de cada clase tenemos. 
+```{r}
+table(hers$drinkany)
+```
+
+## Separación de los datos
+Generamos 2 conjuntos de datos: uno para bebedores y otro para no bebedores (ignoraremos los registros que no tengan información).
+Enseguida dos maneras de hacer la generación de conjuntos de datos a partir de otros.
+```{r}
+drinkanyData.yes <- hers[hers$drinkany == "yes", ]
+dim(drinkanyData.yes)
+#La diferencia entre usar which retorna los indices que cumplen la condicion y el otro es un vector booleano
+drinkanyData.no <- hers[which(hers$drinkany == "no"), ]
+dim(drinkanyData.no)
+```
+Otras funciones utiles son sort y order que permiten ordenar un lista de elementos.
+La función sort devuelve un vector ordenado de los valores (sin contar NA) de la lista y la función order devuelve el índice de los valores ordenados
+El siguiente ejemplo ordena los datos por edad.
+```{r}
+# para que sort devuelva el indice del valor y poder utilizarlo para ordenar un dataframe se utiliza el parametro index.return=T
+orden <- sort(drinkanyData.yes$age, index.return = T)$ix
+drinkanyData.yes <- drinkanyData.yes[orden, ]
+head(drinkanyData.yes[, 1:6])
+
+orden <- order(drinkanyData.no$age)
+drinkanyData.no <- drinkanyData.no[orden, ]
+head(drinkanyData.no[, 1:6])
+```
+
+# Estadística descriptiva
+
+## Medidas de tendencia central: media y mediana
+Calcularemos la media y mediana de Triglicéridos(TG) para observar si hay diferencia entre bebedores y no bebedores
+```{r}
+# Eliminamos los valores nulos para no tener errores
+drinkanyData.yes <- na.omit(drinkanyData.yes)
+drinkanyData.no <- na.omit(drinkanyData.no)
+media <- mean(drinkanyData.yes$TG)
+mediana <- median(drinkanyData.yes$TG)
+MMMyes <- c(media = media, mediana = mediana)
+
+media <- mean(drinkanyData.no$TG)
+mediana <- median(drinkanyData.no$TG)
+MMMno <- c(media = media, mediana = mediana)
+```
+Creamos un dataframe con las medidas de cada grupo
+```{r}
+dt <- data.frame(MMMyes, MMMno)
+dt
+```
+Como se puede observar, existen diferencias en ambos conjuntos de datos. Se observa un pequeño sesgo en la distribución de los datos. Intentemos observar un poco más la distribución de los datos de nuestro conjunto. 
+
+### Varianza y Desviación estándar
+```{r}
+varianza <- var(drinkanyData.yes$TG)
+desEst <- sd(drinkanyData.yes$TG)
+var_sd_yes <- c(var = varianza, des = desEst)
+
+varianza <- var(drinkanyData.no$TG)
+desEst <- sd(drinkanyData.no$TG)
+var_sd_no <- c(var = varianza, des = desEst)
+
+var_sd <- data.frame(var_sd_yes, var_sd_no)
+var_sd
+```
+
+
+## Boxplots
+```{r}
+par(mfrow = c(1, 2))
+
+# los Boxplots son buenos para mostrar los cuartiles
+boxplot(drinkanyData.no$TG, main = "No Bebedores")
+boxplot(drinkanyData.yes$TG, main = "Bebedores")
+```
+
+## Todas las medidas con Summary
+
+R tiene una función que permite visualizar de forma fácil todos estos cálculos: summary(). Esta función devuelve el valor mínimo, el valor máximo, los cuartiles 1,2,3 (los valores que ocupan el 25%,50% y 75%), la mediana y la media.
+
+```{r}
+summary_yes <- summary(drinkanyData.yes$TG)
+summary_no <- summary(drinkanyData.no$TG)
+summary_d <- data.frame(c(summary_yes), c(summary_no))
+summary_d
+```
+
+Summary tambien funciona en todos los datos de un dataframe.
+```{r}
+summary(drinkanyData.yes)
+```
+
+
+# Distribución de los datos
+
+## Histogramas
+```{r}
+ggplot(drinkanyData.yes, aes(x = TG)) +
+  geom_histogram(
+    aes(y = ..density..),
+    binwidth = 2,
+    color = "black",
+    fill = "white"
+  ) +
+  geom_density(alpha = 0.2, fill = "blue") +
+  labs(
+    title = "Histograma de los triglicéridos para bebedores",
+    x = "Triglicéridos",
+    y = "Recuento"
+  )
+```
+```{r}
+ggplot(drinkanyData.no, aes(x = TG)) +
+  geom_histogram(
+    aes(y = ..density..),
+    binwidth = 2,
+    color = "black",
+    fill = "white"
+  ) +
+  geom_density(alpha = 0.2, fill = "blue") +
+  labs(
+    title = "Histograma de los triglicéridos para no bebedores",
+    x = "Triglicéridos",
+    y = "Recuento"
+  )
+```
+
+## Coeficiente de asimetría (skewness) y curtosis
+```{r}
+# Para la curtosis, R calcula el valor -3
+# Más información en https://www.statology.org/skewness-kurtosis-in-r/
+print("Asimetría de valores de triglicéridos para bebedores")
+skewness(drinkanyData.yes$TG)
+
+print("Asimetría de valores de triglicéridos para no bebedores")
+skewness(drinkanyData.no$TG)
+
+print("Kurtosis de valores de triglicéridos para bebedores")
+curtosis_yes <- kurtosis(drinkanyData.yes$TG) - 3
+print(curtosis_yes)
+print("Kurtosis de valores de triglicéridos para no bebedores")
+curtosis_no <- kurtosis(drinkanyData.no$TG) - 3
+print(curtosis_no)
+```
+
+
+
+  

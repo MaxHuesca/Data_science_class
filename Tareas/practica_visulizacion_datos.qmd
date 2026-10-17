@@ -1,0 +1,482 @@
+---
+title: "Práctica de visualización de datos"
+author: "Ismael Maximiliano De Los Santos Huesca"
+date: today
+
+format:
+  pdf:
+    pdf-engine: pdflatex
+    documentclass: article
+    include-before-body: portada_P2.tex
+    geometry:
+      - margin=2cm
+    fontsize: 10pt
+    number-sections: true
+    fig-cap-location: bottom
+    df-print: kable
+    keep-tex: true
+
+execute:
+  echo: true
+  warning: false
+  message: false
+  eval: true
+  freeze: auto
+  cache: true
+
+project:
+  type: default
+  execute-dir: project
+
+code-block-font-size: \footnotesize
+
+header-includes:
+  - \usepackage{graphicx}
+  - \usepackage{amsmath}
+  - \usepackage{booktabs}
+  - \usepackage{float}
+  - \usepackage{caption}
+  - \usepackage{setspace}
+  - \usepackage{fancyhdr}
+  - \captionsetup{font=small}
+  - \singlespacing
+  - \pagestyle{fancy}
+  - \fancyhf{}
+  - \fancyfoot[C]{\thepage}
+
+editor: visual
+---
+
+\newpage
+
+```{r, set_up}
+#| echo: false
+#| eval: true
+#| warning: false
+
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(knitr)
+library(kableExtra)
+library(tidyverse)
+```
+
+1.  Abre el archivo “cardiovascular_disease.csv” encontrado en cursos en R (todos los descriptores del dataset se encuentran en el archivo llamado “attributes.txt”).
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+
+card_dis <- read.csv(
+  "/mnt/c/Users/vrahu/Documents/Ismadlsh/CCG/2026-S5/Data_Science/data/cardiovascular_disease.csv",
+  sep = ",",
+  header = TRUE,
+  row.names = 1
+)
+
+
+knitr::kable(
+  head(card_dis),
+  format = "latex",
+  booktabs = TRUE,
+  caption = "Primeras 6 filas del dataset cardiovascular\\_disease.csv"
+) %>%
+  kable_styling(
+    latex_options = c("HOLD_position", "scale_down", "repeat_header")
+  )
+```
+
+Las descripciones de cada atributo son: - id: identificador unico del paciente
+
+- age_days: edad en días - age_year: edad en años
+
+- gender: genero (1 = mujer, 2 = hombre)
+
+- height: estatura en cm - weight: pero en kg
+
+- ap_hi: presion arterial sistolica
+
+- ap_lo: presion arterial diastolica
+
+- cholesterol: colesterol (1 = normal, 2 = arriba normal, 3 = muy alto)
+
+- gluc: nivel de glucosa (1 = normal, 2 = arriba normal, 3 = muy alto)
+
+- smoke: si el paciente fuma o no (0 = no, 1 = sí))
+
+- alco: si el paciente toma alcohol o no (0 = no, 1 = sí)
+
+- active: caracteristica binaria de la actividad física (0 = vida pasiva, 1 = vida activa)
+
+- cardio: Variable de interes si el paciente cuenta con enfermedad cardiovascular o no (0 = no, 1 = yes)
+
+> Estos datos fueron obtenidos de un repositorio de Kaggle :
+>
+> - https://www.kaggle.com/datasets/sulianova/cardiovascular-disease-dataset
+>
+> - https://github.com/caravanuden/cardio?tab=readme-ov-file
+
+\newpage
+
+2.  Realiza una gráfica de barras con el número de pacientes que se encuentran en cada grupo discreto de la variable colesterol.
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| fig-cap: "El gráfico de barras muestra el número de pacientes que se encuentran en cada grup de la variable categorica colesterol, teniendo una mayor cantidad de pacientes en el grupo de colesterol normal, seguido por el grupo de colesterol arriba de normal y finalmente el grupo de colesterol muy alto cuya diferencia no parece ser mucho con el grupo anterior ."
+#| fig-width: 14
+#| fig-height: 12
+#| fig-pos: "H"
+
+#cambiamos los nombres de la columna colesterol por los labels de la variable categorica
+card_dis$cholesterol_label <- factor(
+  card_dis$cholesterol,
+  levels = c(1, 2, 3),
+  labels = c(
+    "Normal",
+    "Arriba  de Normal",
+    "Muy Alto"
+  )
+)
+
+#lo hacemos una tabla de frecuencias
+cholesterol_counts <- as.data.frame(table(card_dis$cholesterol_label))
+
+ggplot(cholesterol_counts, aes(x = Var1, y = Freq, fill = Var1)) +
+  geom_bar(stat = "identity") +
+  theme(axis.ticks.x = element_blank(), axis.text.x = element_blank()) +
+  scale_fill_discrete(
+    name = "Colesterol"
+  ) +
+  labs(
+    title = "Numero de pacientes, pertenecientes a cada grupo de colesterol",
+    x = "",
+    y = "Num de pacientes"
+  )
+```
+
+\newpage
+
+3.  Realiza una gráfica de barras con el número de pacientes que se encuentran en cada grupo discreto de la variable colesterol agrupada por ausencia o presencia de una enfermedad cardiovascular. ¿Encuentras alguna asociación entre ambas variables?
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| fig-cap: "El barplor nos muestra como la mayoría de los pacientes con enfermedad cardiovascular se encuentran en el grupi con colesterol normal,interesantemente en los grupos con un nivel más elevado de colesterol, la cantidad de mediciones sin enfermedad cardiovascular es mayor que la cantidad de mediciones con enfermedad cardiovascular, lo que nos puede indicar que el colesterol no es un factor determinante para la presencia de una enfermedad cardiovascular."
+#| fig-width: 14
+#| fig-height: 12
+#| fig-pos: "H"
+
+#Sacamos las cuentas de cada categoria de niveles de colesterol por cada nivel de enfermedad cardiovascular
+counts_col_by_ill <- as.data.frame(
+  tapply(
+    card_dis$cardio,
+    list(card_dis$cardio, card_dis$cholesterol_label),
+    table
+  )
+)
+#Convertimos la matriz en un dataframe y hacemos que los nombres de las filas sean una columna
+counts_col_by_ill$cardio <- rownames(counts_col_by_ill)
+
+#tranformarlo a formato long
+counts_col_by_ill <- reshape(
+  counts_col_by_ill,
+  direction = "long", #Necesitamos formato long
+  varying = list(names(counts_col_by_ill)[1:3]),
+  v.names = "Counts",
+  idvar = "Cardio_ill",
+  timevar = "Cholesterol",
+  times = colnames(counts_col_by_ill)[1:3]
+)
+row.names(counts_col_by_ill) <- NULL
+
+
+ggplot(counts_col_by_ill, aes(x = Cholesterol, y = Counts, fill = cardio)) +
+  geom_bar(stat = "identity") +
+  scale_fill_discrete(
+    name = "Enfermedad cardiovascular",
+    labels = c(
+      "Si",
+      "No"
+    )
+  ) +
+  labs(
+    title = "Numero de pacientes, pertenecientes a cada grupo de colesterol",
+    x = "",
+    y = "Num de pacientes"
+  )
+```
+
+\newpage
+
+4.  Realiza un histograma de la variable estatura y coloca una gráfica de densidad encima.
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| fig-cap: "El histograma nos muestra la distribucion de la estatura de los pacientes, la cual parece ser una distribucion normal, con una media alrededor de 165 cm y una desviacion estandar de 10 cm. La grafica de densidad nos permite ver mejor la forma de la distribucion y nos permite comparar con una distribucion normal teorica."
+#| fig-width: 14
+#| fig-height: 12
+#| fig-pos: "H"
+
+ggplot(card_dis, aes(x = height)) +
+  geom_histogram(
+    aes(y = ..density..),
+    binwidth = 2,
+    color = "black",
+    fill = "white"
+  ) +
+  geom_density(alpha = 0.2, fill = "blue") +
+  labs(title = "Histograma de la altura", x = "Estatura", y = "Frecuencia")
+```
+
+\newpage
+
+5.  Realiza un histograma de la variable estatura agrupada por género. ¿Encuentras alguna asociación entre ambas variables?
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| fig-cap: "El histograma nos muestra la distribucion de la estatura de los pacientes, agrupada por genero. Podemos ver que los hombres tienen una estatura promedio mayor que las mujeres, y que la distribucion de la estatura de los hombres es mas amplia que la de las mujeres. Esto nos indica que hay una asociacion entre el genero y la estatura."
+#| fig-width: 14
+#| fig-height: 12
+#| fig-pos: "H"
+
+#agregar las etiquetas
+card_dis$gender <- factor(
+  card_dis$gender,
+  levels = c(1, 2),
+  labels = c("Mujer", "Hombre")
+)
+ggplot(card_dis, aes(x = height, color = gender)) +
+  geom_histogram(
+    binwidth = 2
+  ) +
+  labs(
+    title = "Histograma de la estatura agrupado por genero",
+    x = "Estatura",
+    y = "Frecuencia"
+  )
+```
+
+\newpage
+
+6.  Realiza una gráfica de dispersión con las variables tensión arterial sistólica y tensión arterial diastólica (limita el eje x a 250 y el eje y a 200). Coloca una línea de regresión encima. ¿Encuentras alguna asociación entre las variables?
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| fig-cap: "El gráfico de dispersión nos muestra la relación entre la tensión arterial sistólica y la tensión arterial diastólica. Podemos ver que hay una correlación positiva (0.64)entre ambas variables, lo que significa que a medida que aumenta la tensión arterial sistólica, también aumenta la tensión arterial diastólica. La correlación muestra ser significativa."
+#| fig-width: 14
+#| fig-height: 12
+#| fig-pos: "H"
+
+#filter the dataframe
+card_dis_art_tens <- card_dis[card_dis$ap_hi <= 250 & card_dis$ap_lo <= 200, ]
+
+
+cor_res <- cor.test(
+  card_dis_art_tens$ap_hi,
+  card_dis_art_tens$ap_lo,
+  method = "pearson",
+  alternative = "greater"
+)
+
+p_value <- cor_res$p.value
+
+#make the correlation
+corr_art_tens <- cor_res$estimate
+
+ggplot(card_dis_art_tens, aes(x = ap_hi, y = ap_lo)) +
+  geom_point(color = "blue", shape = 23, alpha = 0.5) +
+  geom_smooth(method = lm) +
+  labs(
+    title = "Dispersinn entre tension arterial sistolica y tension
+arterial diastolica",
+    x = "tension arterial sistolica",
+    y = "tension arterial diastolica",
+    subtitle = paste0(
+      "Pearson r = ",
+      round(corr_art_tens, 3),
+      " p-value = ",
+      p_value
+    )
+  )
+```
+
+\newpage
+
+7.  Realiza una gráfica de dispersión con las variables tensión arterial sistólica y tensión arterial diastólica (limita el eje x a 250 y el eje y a 200), agrupada por la presencia o ausencia de una enfermedad cardiovascular. ¿Qué relación crees que existe entre estas tres variables?
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| fig-cap: "El gráfico de dispersión como la figura anterior nos muestra la clara relación entre ambas medidas de tensiones arteriales, sin embargo no parece haber una relación entre ñas tres variables puesto que los valores de correlación son similares entre los pacientes con enfermedad cardiovascular y los pacientes sin enfermedad cardiovascular, lo que nos indica que la presencia de una enfermedad cardiovascular no afecta la relación entre ambas medidas de tensión arterial."
+#| fig-width: 14
+#| fig-height: 12
+#| fig-pos: "H"
+
+#make the correlation
+card_dis_art_tens_s <- card_dis_art_tens[card_dis_art_tens$cardio == 0, ]
+corr_art_tens_s <- cor.test(
+  card_dis_art_tens_s$ap_hi,
+  card_dis_art_tens_s$ap_lo,
+  method = "pearson"
+)
+corr_s <- corr_art_tens_s$estimate
+p_value_s <- corr_art_tens_s$p.value
+
+card_dis_art_tens_e <- card_dis_art_tens[card_dis_art_tens$cardio == 1, ]
+corr_art_tens_e <- cor.test(
+  card_dis_art_tens_e$ap_hi,
+  card_dis_art_tens_e$ap_lo,
+  method = "pearson"
+)
+corr_e <- corr_art_tens_e$estimate
+p_value_e <- corr_art_tens_e$p.value
+
+ggplot(card_dis_art_tens, aes(x = ap_hi, y = ap_lo, color = cardio)) +
+  geom_point() +
+  geom_smooth(method = lm) +
+  labs(
+    title = "Dispersinn entre tension arterial sistolica y tension
+arterial diastolica agrupada por enfermedad cardiovascular",
+    x = "tension arterial sistolica",
+    y = "tension arterial diastolica",
+    subtitle = paste0(
+      "Pearson r saludable= ",
+      round(corr_s, 3),
+      " p_value saludable= ",
+      p_value_s,
+      " | Pearson r enfermo= ",
+      round(corr_e, 3),
+      " p_value enfermo= ",
+      p_value_e
+    )
+  )
+```
+
+\newpage
+
+8.  Realiza un boxplot con la variable peso y la variable de enfermedad cardiovascular. ¿Qué puedes deducir sobre el peso de los pacientes con enfermedades cardiovasculares?
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| fig-cap: "El boxplot nos muestra la distribucion del peso de los pacientes con y sin enfermedad cardiovascular. Podemos ver que los pacientes con enfermedad cardiovascular muestra una ligera tendencia a tener un peso mayor por la posición de su mediana ligeramente arriba de aquella perteneciente a los pacientes sin enfermedad cardiovascular, sin embargo ambas cuentan con valores atípicos por lo que una prueba estadística formal es necesaria para determinar si la diferencia es significativa."
+#| fig-width: 14
+#| fig-height: 12
+#| fig-pos: "H"
+
+card_dis$cardio <- factor(
+  card_dis$cardio,
+  levels = c(0, 1),
+  labels = c("Sano", "Enfermo")
+)
+
+ggplot(card_dis, aes(x = cardio, y = weight, color = cardio)) +
+  geom_boxplot() +
+  labs(
+    title = "Boxplot de la distribucion de peso en pacientes con y sin enfermedad cardiovascular",
+    x = "Enfermedad cardiovascular",
+    y = "Indice de Masa Corporal"
+  ) +
+  scale_fill_discrete(
+    name = "Enfermedad cardiovascular",
+    labels = c(
+      "Sano",
+      "Enfermo"
+    )
+  )
+```
+
+\newpage
+
+9.  Realiza un boxplot con la variable peso y la variable de enfermedad cardiovascular, agrupadas por la variable “fumar”. ¿Qué relación existe entre las tres variables?
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| fig-cap: "El boxplot nos muestra la distribucion del peso de los pacientes con y sin enfermedad cardiovascular, agrupados por fumadores y no fumadores. Podemos ver que la tendencia entre ambos pacientes apunta a que aquellos que fuman tienden a tener un peso mayor que aquellos que no fuman. Siendo valores mayores en el grupo de pacientes con enfermedad cardiovascular, lo que nos puede indicar que el fumar es un factor de riesgo para la presencia de una enfermedad cardiovascular."
+#| fig-width: 14
+#| fig-height: 12
+#| fig-pos: "H"
+
+#make the variable smoke a factor
+card_dis$smoke <- factor(
+  card_dis$smoke,
+  levels = c(0, 1),
+  labels = c("No fuma", "Fuma")
+)
+
+
+ggplot(card_dis, aes(x = cardio, y = weight, color = smoke)) +
+  geom_boxplot() +
+  labs(
+    title = "Boxplot de la distribucion de peso en pacientes con y sin enfermedad cardiovascular, agrupado por fumadores y no fumadores",
+    x = "Enfermedad cardiovascular",
+    y = "Indice de Masa Corporal"
+  ) +
+  scale_fill_discrete(
+    name = "Enfermedad cardiovascular",
+    labels = c(
+      "Sano",
+      "Enfermo"
+    )
+  )
+```
+
+\newpage
+
+10. Realiza un heatmap de la edad en años, la presión arterial sistólica, la presión arterial diastólica, la estatura y el peso, contra los grupos obtenidos de las combinaciones entre las variables colesterol y enfermedad cardiovascular (debes obtener un heatmap de 6x5).
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| fig-cap: "El hetmap nos muestra la media de las variables edad, presión arterial sistólica, presión arterial diastólica, estatura y peso, contra los grupos obtenidos de las combinaciones entre las variables colesterol y enfermedad cardiovascular. Podemos ver que los pacientes con colesterol muy alto y enfermedad cardiovascular tienen una media de edad mayor que aquellos con colesterol normal y sin enfermedad cardiovascular. Además, podemos ver que los pacientes con colesterol muy alto y enfermedad cardiovascular tienen una media de presión arterial sistólica y diastólica mayor que aquellos con colesterol normal y sin enfermedad cardiovascular. Esto nos puede indicar que el colesterol y la enfermedad cardiovascular están relacionados con la edad y la presión arterial."
+#| fig-width: 14
+#| fig-height: 12
+
+card_data <- aggregate(
+  card_dis[, c("age_year", "ap_hi", "ap_lo", "height", "weight")],
+  by = list(card_dis$cholesterol_label, card_dis$cardio),
+  FUN = mean,
+  na.rm = T
+)
+card_data$id <- paste(card_data$Group.1, card_data$Group.2, sep = "_")
+card_data$Group.1 <- NULL
+card_data$Group.2 <- NULL
+
+#hacer el formato long
+counts_col_long <- reshape(
+  card_data,
+  direction = "long",
+  varying = c("age_year", "ap_hi", "ap_lo", "height", "weight"),
+  v.names = "Value",
+  idvar = "id",
+  timevar = "Variable",
+  times = c("age_year", "ap_hi", "ap_lo", "height", "weight")
+)
+row.names(counts_col_long) <- NULL
+
+
+ggplot(counts_col_long, aes(x = Variable, y = id, fill = Value)) +
+  geom_tile() +
+  scale_fill_gradient2(
+    low = "grey",
+    high = "brown",
+    mid = "white",
+    midpoint = 50
+  )
+```

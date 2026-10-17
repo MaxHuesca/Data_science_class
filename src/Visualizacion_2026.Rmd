@@ -1,0 +1,516 @@
+---
+title: "Visualización de datos"
+author: "Eli Sulvarán Guel, Carlos Francisco Méndez"
+date: "<small>`r Sys.Date()`</small>"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+    cod_folding: hide
+    center: true
+    theme: sandstone
+editor_options: 
+  chunk_output_type: inline
+---
+
+# Llamar librerías y preparar los datos
+Llamamos a la librería requerida para generar las gráficas
+```{r}
+library(ggplot2)
+```
+
+
+Leemos el archivo que vamos a visualizar
+```{r}
+hers <- read.csv(
+  "/mnt/c/Users/vrahu/Documents/Ismadlsh/CCG/2026-S5/Data_Science/data/hersdata.csv",
+  sep = ",",
+  header = T
+)
+```
+
+
+Imprimimos las primeras líneas de los datos para saber qué tipo de información encontramos 
+```{r}
+head(hers)
+dim(hers)
+```
+
+# Generación de gráficas de barras y de pie 
+Las gráficas de barras y de pie funcionan para visualizar comparaciones cuantitativas entre grupos discretos. 
+Una de las variables dentro de nuestros datos es physact, que indica qué tanto ejercicio hace la paciente. Podemos visualizar cuántas mujeres pertenecen a cada categoría de la siguiente manera
+```{r}
+counts <- table(hers$physact) #Obtenemos la cuenta para cada categoría con la funcion table()
+counts <- as.data.frame(counts) #Lo convertimos en un dataframe para gráficar
+counts
+```
+
+### gráfica de barras
+Esta es la forma más sencilla de realizar una gráfica de barras.
+Lectura recomendada para entender el uso de stat="identity": https://www.statology.org/ggplot-stat-identity/
+```{r}
+ggplot(counts, aes(x = Var1, y = Freq)) +
+  geom_bar(stat = "identity")
+```
+
+
+Para hacer la gráfica anterior más estética, podemos agregar el parámetro "fill", para darle un color distinto a cada barra
+```{r}
+ggplot(counts, aes(x = Var1, y = Freq, fill = Var1)) +
+  geom_bar(stat = "identity")
+```
+
+
+Como podemos notar, en el eje de las x, las palabras se amontonan, ademas de que tenemos una leyenda, por lo que estan duplicadas. Hay dos formas de solucionar esto:
+```{r}
+#Girando la gráfica con coord_flip() y eliminando la leyenda con theme()
+ggplot(counts, aes(x = Var1, y = Freq, fill = Var1)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  theme(legend.position = "none")
+```
+```{r}
+#Eliminando los nombres del eje de las x y dejando la leyenda
+ggplot(counts, aes(x = Var1, y = Freq, fill = Var1)) +
+  geom_bar(stat = "identity") +
+  theme(axis.ticks.x = element_blank(), axis.text.x = element_blank())
+```
+
+
+Tambien podemos modificar los nombres de los grupos, el titulo y los ejes
+```{r}
+#Para cambiar el titulo y los nombres de los ejes, usamos los parámetros "title", "x" y "y" dentro de labs()
+#Paraca cambiar los nombres de los grupos:
+#Caso 1: usando "labels" adentro de scale_x_discrete()
+ggplot(counts, aes(x = Var1, y = Freq, fill = Var1)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  theme(legend.position = "none") +
+  scale_x_discrete(
+    labels = c(
+      "Algo activa",
+      "Mucho menos activa",
+      "Mucho más activa",
+      "Algo menos activa",
+      "Algo más activa"
+    )
+  ) +
+  labs(
+    title = "Numero de mujeres pertenecientes a cada grupo de \n actividad física",
+    x = "Actividad física",
+    y = "Número de mujeres"
+  )
+```
+```{r}
+#Caso 2: usando "name" y "labels" adentro de scale_fill_discrete()
+ggplot(counts, aes(x = Var1, y = Freq, fill = Var1)) +
+  geom_bar(stat = "identity") +
+  theme(axis.ticks.x = element_blank(), axis.text.x = element_blank()) +
+  scale_fill_discrete(
+    name = "Actividad física",
+    labels = c(
+      "Algo activa",
+      "Mucho menos activa",
+      "Mucho más activa",
+      "Algo menos activa",
+      "Algo más activa"
+    )
+  ) +
+  labs(
+    title = "Numero de mujeres pertenecientes a cada grupo de \n actividad física",
+    x = "",
+    y = "Número de mujeres"
+  )
+```
+
+### gráfica de barras para tres variables: 
+Si queremos visualizar una variable adicional, tenemos que realizar un nuevo subset de nuestros datos con la funcion tapply
+```{r}
+#Sacamos las cuentas de mujeres para cada grupo de actividad fisica y de diabetes
+counts2 <- tapply(hers$physact, list(hers$physact, hers$diabetes), table)
+#Convertimos la matriz en un dataframe y hacemos que los nombres de las filas sean una columna
+counts2 <- as.data.frame(counts2)
+counts2$Physact <- rownames(counts2)
+counts2
+```
+
+
+Como podemos notar, la tabla se encuentra en formato "wide" y necesitamos formato "long". Para ello, transformamos el dataframe con reshape().
+Lectura recomendada para entender las deferencias entre formato "wide" y "long": https://www.datacamp.com/tutorial/long-wide-data-R
+```{r}
+counts2 <- reshape(
+  counts2, #Objeto a transformar
+  direction = "long", #Necesitamos formato long
+  varying = list(names(counts2)[1:2]), #Las columnas a alargar (las que tienen las cuentas) son la 1 y la 2
+  v.names = "Counts", #Las cuentas se almacenaran en la columna "Counts"
+  idvar = "Physact", #La variable con los identificadores del grupo de actividad fisica
+  timevar = "Diabetes", #Variable que vamos a alargar, que corresponde a las columnas "no" y "yes"
+  times = c("no", "yes")
+)
+row.names(counts2) <- NULL
+counts2
+```
+
+
+Con los datos de esta forma, ya podemos gráficar. Para añadir la nueva variable, vamos a colocar el nombre de la misma en el parámetro "fill"
+```{r}
+ggplot(counts2, aes(x = Physact, y = Counts, fill = Diabetes)) +
+  geom_bar(stat = "identity")
+```
+
+
+Tambien podemos hacer gráficas de barra con grupos pero sin apilar, y colocando las barras lado a lado, añadiendo el parámetro "position" en geom_bar()
+```{r}
+ggplot(counts2, aes(x = Physact, y = Counts, fill = Diabetes)) +
+  geom_bar(stat = "identity", position = position_dodge())
+```
+
+
+Finalmente, podemos modificar todo el texto y girar la gráfica para obtener un mejor resultado
+```{r}
+#Barras apiladas
+ggplot(counts2, aes(x = Physact, y = Counts, fill = Diabetes)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  scale_fill_discrete(name = "Diabetes", labels = c("No", "Sí")) +
+  scale_x_discrete(
+    labels = c(
+      "Algo activa",
+      "Mucho menos activa",
+      "Mucho más activa",
+      "Algo menos activa",
+      "Algo más activa"
+    )
+  ) +
+  labs(
+    title = "Numero de mujeres pertenecientes a cada grupo de \n actividad física",
+    x = "Actividad física",
+    y = "Número de mujeres"
+  )
+```
+```{r}
+#Barras lado a lado
+ggplot(counts2, aes(x = Physact, y = Counts, fill = Diabetes)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  coord_flip() +
+  scale_fill_discrete(name = "Diabetes", labels = c("No", "Sí")) +
+  scale_x_discrete(
+    labels = c(
+      "Algo activa",
+      "Mucho menos activa",
+      "Mucho más activa",
+      "Algo menos activa",
+      "Algo más activa"
+    )
+  ) +
+  labs(
+    title = "Numero de mujeres pertenecientes a cada grupo de \n actividad física",
+    x = "Actividad física",
+    y = "Número de mujeres"
+  )
+```
+
+
+### gráfica de pie
+Regresemos al primer subset de datos, que unicamente incluye la variable physact. ggplot2 no tiene una funcion para realizar una gráfica de pie, pero pueden hacerse agregando coord_polar() a la gráfica de barras. La forma más sencilla de realizar una gráfica de pie es la siguiente: 
+```{r}
+ggplot(counts, aes(x = "", y = Freq, fill = Var1)) +
+  geom_bar(stat = "identity") +
+  coord_polar("y", start = 0)
+```
+
+
+La gráfica anterior no es tan estética debido a los números, el círculo blanco y la raya encontrada en el borde del lado izquierdo. Todo esto se puede eliminar con theme()
+```{r}
+ggplot(counts, aes(x = "", y = Freq, fill = Var1)) +
+  geom_bar(stat = "identity") +
+  coord_polar("y", start = 0) +
+  theme(
+    axis.text = element_blank(), #Elimina los numeros
+    axis.ticks = element_blank(), #Elimina la raya
+    panel.grid = element_blank()
+  ) #Elimina el circulo blanco
+```
+
+
+Esta gráfica se ve mucho mejor. Finalmente, podemos cambiar los nombres de los ejes y de la leyenda. 
+```{r}
+ggplot(counts, aes(x = "", y = Freq, fill = Var1)) +
+  geom_bar(stat = "identity") +
+  coord_polar("y", start = 0) +
+  theme(
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid = element_blank()
+  ) +
+  scale_fill_discrete(
+    name = "Actividad física",
+    labels = c(
+      "Algo activa",
+      "Mucho menos activa",
+      "Mucho más activa",
+      "Algo menos activa",
+      "Algo más activa"
+    )
+  ) +
+  labs(
+    title = "Numero de mujeres pertenecientes a cada grupo de \n actividad física",
+    x = "",
+    y = ""
+  )
+```
+
+Aunque las gráficas de barras y de pie funcionan para lo mismo, lo más recomendable siempre es usar gráficas de barra, pues a veces los humanos no podemos distinguir correctamente entre angulos similares. [En este post lo explican bastante bien.](https://www.data-to-viz.com/caveat/pie.html)
+
+
+# Generación de gráficas de densidad e histogramas
+Este tipo de gráficas funcionan cuando queremos observar la distribucion de variables cuantitativas
+
+### Histograma para una variable
+Esta es la forma más basica de crear un histograma
+```{r}
+ggplot(hers, aes(x = glucose)) +
+  geom_histogram() +
+  labs(title = "Histograma de la glucosa", x = "Glucosa", y = "Recuento")
+```
+
+
+Podemos hacer la gráfica más bonita modificando algunos parámetros, como el color del contorno y el relleno y el grosor de las barras, útilizando los argumentos "binwidth", "color" y "fill"
+```{r}
+ggplot(hers, aes(x = glucose)) +
+  geom_histogram(binwidth = 2, color = "black", fill = "white") +
+  labs(title = "Histograma de la glucosa", x = "Glucosa", y = "Recuento")
+```
+
+
+Con esta gráfica, podemos observar que la mayoria de las participantes en el estudio presentan valores de glucosa en sangre normales (~100 mg/dL)
+
+### gráfica de densidad
+Tambien podemos sobreponer una gráfica de densidad en el histograma. El parámetro alpha nos permite que la gráfica de densidad tenga transaparencia y tambien puedan observarse las barras debajo
+```{r}
+ggplot(hers, aes(x = glucose)) +
+  geom_histogram(
+    aes(y = ..density..),
+    binwidth = 2,
+    color = "black",
+    fill = "white"
+  ) +
+  geom_density(alpha = 0.2, fill = "blue") +
+  labs(title = "Histograma de la glucosa", x = "Glucosa", y = "Recuento")
+```
+
+### Histograma para dos variables
+Finalmente, podemos agrupar estos datos de acuerdo a alguna variable cualitativa, por ejemplo, si la paciente tiene diabetes, cambiando el parámetro "color"
+```{r}
+ggplot(hers, aes(x = glucose, color = diabetes)) +
+  geom_histogram(binwidth = 2.5) +
+  labs(title = "Histograma de la glucosa", x = "Glucosa", y = "Recuento")
+```
+
+
+Al agrupar los datos en mujeres diabéticas y no diabéticas, como era de esperarse, podemos observar que las mujeres diabéticas presentan valores de glucosa en sangre más elevados que las mujeres no diabéticas.
+
+
+# Generación de boxplots
+Estas gráficas funcionan cuando queremos visualizar diferencias entre valores de una variable cuantitativa para los grupos de una variable cualitativa. 
+
+### Boxplots para dos variables 
+Forma más sencilla de realizar un boxplot
+```{r}
+ggplot(hers, aes(x = exercise, y = BMI)) +
+  geom_boxplot() +
+  labs(
+    title = "Boxplot del Indice de Masa Corporal y el ejercicio",
+    x = "Ejercicio",
+    y = "Indice de Masa Corporal (IMC)"
+  )
+```
+
+
+Los boxplots son una herramienta muy útil porque nos dan información sobre las medidas de tendencia central de nuestros datos. Lo que se encuentra dentro de la caja corresponde al 50% de nuestros datos, que van desde el primer cuartil (el 25% de nuestros datos) hasta el tercer cuartil (el 75% de nuestros datos). La línea de en medio dentro de la caja corresponde a la mediana de nuestros datos, o bien, al segundo cuartil. Finalmente, los puntos que sobresalen de las líneas son los outliers o valores atípicos de nuestros datos. En este caso, podemos observar que en general, el IMC es menor en mujeres que realizan ejercicio que en mujeres que no lo realizan. 
+
+
+
+Nuevamente, podemos hacer nuestras gráficas más estéticas cambiando el color, útilizando el parámetro "color". Tambien podemos quitar la leyenda, pues en este caso no la necesitamos, útilizando el parámetro "legend.position = "none"" dentro de theme. 
+```{r}
+ggplot(hers, aes(x = exercise, y = BMI, color = exercise)) +
+  geom_boxplot() +
+  labs(
+    title = "Boxplot del Indice de Masa Corporal y el ejercicio",
+    x = "Ejercicio",
+    y = "Indice de Masa Corporal"
+  )
+
+ggplot(hers, aes(x = exercise, y = BMI, color = exercise)) +
+  geom_boxplot() +
+  theme(legend.position = "none") +
+  labs(
+    title = "Boxplot del Indice de Masa Corporal y el ejercicio",
+    x = "Ejercicio",
+    y = "Indice de Masa Corporal"
+  )
+```
+
+### Boxplots para tres variables
+Finalmente, podemos visualizar otra variable más para observar grupos, cambiando el parámetro "color" y asignandole una variable
+```{r}
+ggplot(hers, aes(x = exercise, y = BMI, color = smoking)) +
+  geom_boxplot() +
+  labs(
+    title = "Boxplot del Indice de Masa Corporal y el ejercicio",
+    x = "Ejercicio",
+    y = "Indice de Masa Corporal"
+  )
+```
+
+
+Curiosamente, podemos observar que tanto para el grupo de mujeres que hacen ejercicio, como para el grupo de mujeres que no lo hacen, las mujeres fumadoras tienen un menor índice de masa corporal. 
+
+
+Modificaciones adicionales para hacer la gráfica más estética, cambiando los valores del eje x con scale_x_discrete() y la leyenda con scale_color_discrete()...
+```{r}
+ggplot(hers, aes(x = exercise, y = BMI, color = smoking)) +
+  geom_boxplot() +
+  labs(
+    title = "Boxplot del Indice de Masa Corporal y el ejercicio",
+    x = "Ejercicio",
+    y = "Indice de Masa Corporal"
+  ) +
+  scale_color_discrete(name = "Fuma", labels = c("No", "Sí")) +
+  scale_x_discrete(labels = c("No", "Sí"))
+```
+
+# Generación de gráficas de dispersión
+Este tipo de gráficas funcionan muy bien cuando queremos visualizar dos o más variables al mismo tiempo, y como se relacionan entre ellas. 
+
+### gráfica de dispersión para dos variables
+Forma más sencilla de realizar gráficas de dispersión
+```{r}
+ggplot(hers, aes(x = weight, y = glucose)) +
+  geom_point() +
+  labs(
+    title = "Gráfica de dispersión entre peso y glucosa",
+    x = "Peso",
+    y = "Glucosa"
+  )
+```
+
+
+Con esta gráfica, podemos observar que existe una ligera relacion entre el peso y los valores de glucosa. Para confirmar esto, podemos tambien gráficar una línea de regresion con geom_smooth()
+
+```{r}
+ggplot(hers, aes(x = weight, y = glucose)) +
+  geom_point() +
+  geom_smooth(method = lm) +
+  labs(
+    title = "Gráfica de dispersión entre peso y glucosa",
+    x = "Peso",
+    y = "Glucosa"
+  )
+```
+
+
+Finalmente, podemos cambiar el color, la forma y la transparencia de los puntos con los parámetros "color", "shape" y "alpha"
+```{r}
+ggplot(hers, aes(x = weight, y = glucose)) +
+  geom_point(color = "blue", shape = 23, alpha = 0.5) +
+  labs(
+    title = "Gráfica de dispersión entre peso y glucosa",
+    x = "Peso",
+    y = "Glucosa"
+  )
+```
+
+
+# Generación de heatmaps
+Los heatmaps funcionan para visualizar datos encontrados en una matriz. Son muy útiles para gráficas de correlacion, pero eso lo veremos más adelante. Por el momento, vamos a visualizar datos cuantitativos de nuestro objeto. 
+
+```{r}
+#Seleccionamos algunas variables cuantitativas: edad, peso, medida de la cintura, glucosa, colesterol LDL, colesterol HDL, trigliceridos, tensión arterial sistolica y tensión arterial diastolica
+hm_data <- aggregate(
+  hers[, c(2, 15, 17, 19, 21, 22, 23, 24, 25)],
+  by = list(hers$physact), #Agrupamos por actividad fisica
+  mean,
+  na.rm = T
+) #Obtenemos la media
+hm_data
+```
+
+De nuevo, tenemos que transformar estos datos a formato long. 
+```{r}
+hm_data <- reshape(
+  hm_data,
+  direction = "long",
+  varying = list(names(hm_data)[2:10]),
+  v.names = "Value",
+  idvar = "Group.1",
+  timevar = "Variable",
+  times = colnames(hm_data)[2:10]
+)
+row.names(hm_data) <- NULL
+hm_data[1:15, ]
+```
+
+Esta es la forma más sencilla de realizar un heatmap
+```{r}
+ggplot(hm_data, aes(x = Variable, y = Group.1, fill = Value)) +
+  geom_tile()
+```
+
+
+Podemos cambiar las paletas usando scale_fill_gradient() y scale_fill_gradient2()
+```{r}
+ggplot(hm_data, aes(x = Variable, y = Group.1, fill = Value)) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "steelblue")
+```
+```{r}
+ggplot(hm_data, aes(x = Variable, y = Group.1, fill = Value)) +
+  geom_tile() +
+  # scale_fill_gradient2(low = "grey", high = "brown", mid = "white", midpoint = median(hm_data$Value))
+  scale_fill_gradient2(
+    low = "grey",
+    high = "brown",
+    mid = "white",
+    midpoint = 50
+  )
+```
+
+
+Por ultimo, podemos modificar los nombres de las variables. 
+```{r}
+ggplot(hm_data, aes(x = Variable, y = Group.1, fill = Value)) +
+  geom_tile() +
+  # scale_fill_gradient2(low = "forestgreen", high = "red", mid = "Gold", midpoint = median(hm_data$Value)) +
+  scale_fill_gradient(low = "white", high = "steelblue") +
+  labs(
+    title = "Heatmap de variables por grupo de actividad física",
+    fill = "Valor",
+    y = "Grupo de actividad física",
+    x = "Variable"
+  ) +
+  scale_y_discrete(
+    labels = c(
+      "Algo activa",
+      "Mucho menos activa",
+      "Mucho más activa",
+      "Algo menos activa",
+      "Algo más activa"
+    )
+  ) +
+  scale_x_discrete(
+    labels = c(
+      "Edad",
+      "TAD",
+      "Glucosa",
+      "HDL",
+      "LDL",
+      "TAS",
+      "TG",
+      "Cintura",
+      "Peso"
+    )
+  )
+```

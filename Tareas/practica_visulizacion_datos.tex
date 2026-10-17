@@ -1,0 +1,561 @@
+% Options for packages loaded elsewhere
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+%
+\documentclass[
+  10pt,
+]{article}
+\usepackage{xcolor}
+\usepackage[margin=2cm]{geometry}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{5}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+% Make \paragraph and \subparagraph free-standing
+\makeatletter
+\ifx\paragraph\undefined\else
+  \let\oldparagraph\paragraph
+  \renewcommand{\paragraph}{
+    \@ifstar
+      \xxxParagraphStar
+      \xxxParagraphNoStar
+  }
+  \newcommand{\xxxParagraphStar}[1]{\oldparagraph*{#1}\mbox{}}
+  \newcommand{\xxxParagraphNoStar}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+  \let\oldsubparagraph\subparagraph
+  \renewcommand{\subparagraph}{
+    \@ifstar
+      \xxxSubParagraphStar
+      \xxxSubParagraphNoStar
+  }
+  \newcommand{\xxxSubParagraphStar}[1]{\oldsubparagraph*{#1}\mbox{}}
+  \newcommand{\xxxSubParagraphNoStar}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+\makeatother
+
+
+\usepackage{longtable,booktabs,array}
+\newcounter{none} % for unnumbered tables
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+
+
+
+
+
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+
+
+ 
+
+
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{setspace}
+\usepackage{fancyhdr}
+\captionsetup{font=small}
+\singlespacing
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[C]{\thepage}
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\AtBeginDocument{%
+\ifdefined\contentsname
+  \renewcommand*\contentsname{Table of contents}
+\else
+  \newcommand\contentsname{Table of contents}
+\fi
+\ifdefined\listfigurename
+  \renewcommand*\listfigurename{List of Figures}
+\else
+  \newcommand\listfigurename{List of Figures}
+\fi
+\ifdefined\listtablename
+  \renewcommand*\listtablename{List of Tables}
+\else
+  \newcommand\listtablename{List of Tables}
+\fi
+\ifdefined\figurename
+  \renewcommand*\figurename{Figure}
+\else
+  \newcommand\figurename{Figure}
+\fi
+\ifdefined\tablename
+  \renewcommand*\tablename{Table}
+\else
+  \newcommand\tablename{Table}
+\fi
+}
+\@ifpackageloaded{float}{}{\usepackage{float}}
+\floatstyle{ruled}
+\@ifundefined{c@chapter}{\newfloat{codelisting}{h}{lop}}{\newfloat{codelisting}{h}{lop}[chapter]}
+\floatname{codelisting}{Listing}
+\newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
+\makeatother
+\makeatletter
+\makeatother
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
+\makeatother
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Práctica de visualización de datos},
+  pdfauthor={Ismael Maximiliano De Los Santos Huesca},
+  colorlinks=true,
+  linkcolor={blue},
+  filecolor={Maroon},
+  citecolor={Blue},
+  urlcolor={Blue},
+  pdfcreator={LaTeX via pandoc}}
+
+
+\title{Práctica de visualización de datos}
+\author{Ismael Maximiliano De Los Santos Huesca}
+\date{2026-09-17}
+\begin{document}
+\maketitle
+
+\begin{titlepage}
+
+    % Logos alineados izquierda y derecha
+    \begin{minipage}{0.45\textwidth}
+        \raggedright
+        \includegraphics[width=7cm]{Logo_UNAM.png}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.45\textwidth}
+        \raggedleft
+        \includegraphics[width=3.4cm]{Logo_LCG.png}
+    \end{minipage}
+
+    \centering
+    \vspace*{2cm}
+
+    {\Huge\bfseries Práctica visualización de datos \par}
+    \vspace{2cm}
+    
+    {\Large Data Science \par}
+    \vspace{1cm}
+    
+    {\Large De Los Santos Huesca Ismael Maximiliano \par}
+    \vspace{1cm}
+
+    {\Large Dr. Carlos Mendez\par}
+    \vspace{1cm}
+    
+    {\Large Fecha: 03 Septiembre 2026 \par}
+    
+    \vfill
+
+\end{titlepage}
+
+
+\newpage
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Abre el archivo ``cardiovascular\_disease.csv'' encontrado en cursos
+  en R (todos los descriptores del dataset se encuentran en el archivo
+  llamado ``attributes.txt'').
+\end{enumerate}
+
+\begin{table}[H]
+
+\caption{\label{tab:unnamed-chunk-1}Primeras 6 filas del dataset cardiovascular\_disease.csv}
+\centering
+\resizebox{\linewidth}{!}{
+\begin{tabular}[t]{lrrrrrrrrrrrrr}
+\toprule
+  & age\_days & age\_year & gender & height & weight & ap\_hi & ap\_lo & cholesterol & gluc & smoke & alco & active & cardio\\
+\midrule
+0 & 18393 & 50.39178 & 2 & 168 & 62 & 110 & 80 & 1 & 1 & 0 & 0 & 1 & 0\\
+1 & 20228 & 55.41918 & 1 & 156 & 85 & 140 & 90 & 3 & 1 & 0 & 0 & 1 & 1\\
+2 & 18857 & 51.66301 & 1 & 165 & 64 & 130 & 70 & 3 & 1 & 0 & 0 & 0 & 1\\
+3 & 17623 & 48.28219 & 2 & 169 & 82 & 150 & 100 & 1 & 1 & 0 & 0 & 1 & 1\\
+4 & 17474 & 47.87397 & 1 & 156 & 56 & 100 & 60 & 1 & 1 & 0 & 0 & 0 & 0\\
+\addlinespace
+8 & 21914 & 60.03836 & 1 & 151 & 67 & 120 & 80 & 2 & 2 & 0 & 0 & 0 & 0\\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+Las descripciones de cada atributo son: - id: identificador unico del
+paciente
+
+\begin{itemize}
+\item
+  age\_days: edad en días - age\_year: edad en años
+\item
+  gender: genero (1 = mujer, 2 = hombre)
+\item
+  height: estatura en cm - weight: pero en kg
+\item
+  ap\_hi: presion arterial sistolica
+\item
+  ap\_lo: presion arterial diastolica
+\item
+  cholesterol: colesterol (1 = normal, 2 = arriba normal, 3 = muy alto)
+\item
+  gluc: nivel de glucosa (1 = normal, 2 = arriba normal, 3 = muy alto)
+\item
+  smoke: si el paciente fuma o no (0 = no, 1 = sí))
+\item
+  alco: si el paciente toma alcohol o no (0 = no, 1 = sí)
+\item
+  active: caracteristica binaria de la actividad física (0 = vida
+  pasiva, 1 = vida activa)
+\item
+  cardio: Variable de interes si el paciente cuenta con enfermedad
+  cardiovascular o no (0 = no, 1 = yes)
+\end{itemize}
+
+\begin{quote}
+Estos datos fueron obtenidos de un repositorio de Kaggle :
+
+\begin{itemize}
+\item
+  https://www.kaggle.com/datasets/sulianova/cardiovascular-disease-dataset
+\item
+  https://github.com/caravanuden/cardio?tab=readme-ov-file
+\end{itemize}
+\end{quote}
+
+\newpage
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{1}
+\tightlist
+\item
+  Realiza una gráfica de barras con el número de pacientes que se
+  encuentran en cada grupo discreto de la variable colesterol.
+\end{enumerate}
+
+\begin{figure}[H]
+
+{\centering \pandocbounded{\includegraphics[keepaspectratio]{practica_visulizacion_datos_files/figure-pdf/unnamed-chunk-2-1.pdf}}
+
+}
+
+\caption{El gráfico de barras muestra el número de pacientes que se
+encuentran en cada grup de la variable categorica colesterol, teniendo
+una mayor cantidad de pacientes en el grupo de colesterol normal,
+seguido por el grupo de colesterol arriba de normal y finalmente el
+grupo de colesterol muy alto cuya diferencia no parece ser mucho con el
+grupo anterior .}
+
+\end{figure}%
+
+\newpage
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{2}
+\tightlist
+\item
+  Realiza una gráfica de barras con el número de pacientes que se
+  encuentran en cada grupo discreto de la variable colesterol agrupada
+  por ausencia o presencia de una enfermedad cardiovascular. ¿Encuentras
+  alguna asociación entre ambas variables?
+\end{enumerate}
+
+\begin{figure}[H]
+
+{\centering \pandocbounded{\includegraphics[keepaspectratio]{practica_visulizacion_datos_files/figure-pdf/unnamed-chunk-3-1.pdf}}
+
+}
+
+\caption{El barplor nos muestra como la mayoría de los pacientes con
+enfermedad cardiovascular se encuentran en el grupi con colesterol
+normal,interesantemente en los grupos con un nivel más elevado de
+colesterol, la cantidad de mediciones sin enfermedad cardiovascular es
+mayor que la cantidad de mediciones con enfermedad cardiovascular, lo
+que nos puede indicar que el colesterol no es un factor determinante
+para la presencia de una enfermedad cardiovascular.}
+
+\end{figure}%
+
+\newpage
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{3}
+\tightlist
+\item
+  Realiza un histograma de la variable estatura y coloca una gráfica de
+  densidad encima.
+\end{enumerate}
+
+\begin{figure}[H]
+
+{\centering \pandocbounded{\includegraphics[keepaspectratio]{practica_visulizacion_datos_files/figure-pdf/unnamed-chunk-4-1.pdf}}
+
+}
+
+\caption{El histograma nos muestra la distribucion de la estatura de los
+pacientes, la cual parece ser una distribucion normal, con una media
+alrededor de 165 cm y una desviacion estandar de 10 cm. La grafica de
+densidad nos permite ver mejor la forma de la distribucion y nos permite
+comparar con una distribucion normal teorica.}
+
+\end{figure}%
+
+\newpage
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{4}
+\tightlist
+\item
+  Realiza un histograma de la variable estatura agrupada por género.
+  ¿Encuentras alguna asociación entre ambas variables?
+\end{enumerate}
+
+\begin{figure}[H]
+
+{\centering \pandocbounded{\includegraphics[keepaspectratio]{practica_visulizacion_datos_files/figure-pdf/unnamed-chunk-5-1.pdf}}
+
+}
+
+\caption{El histograma nos muestra la distribucion de la estatura de los
+pacientes, agrupada por genero. Podemos ver que los hombres tienen una
+estatura promedio mayor que las mujeres, y que la distribucion de la
+estatura de los hombres es mas amplia que la de las mujeres. Esto nos
+indica que hay una asociacion entre el genero y la estatura.}
+
+\end{figure}%
+
+\newpage
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{5}
+\tightlist
+\item
+  Realiza una gráfica de dispersión con las variables tensión arterial
+  sistólica y tensión arterial diastólica (limita el eje x a 250 y el
+  eje y a 200). Coloca una línea de regresión encima. ¿Encuentras alguna
+  asociación entre las variables?
+\end{enumerate}
+
+\begin{figure}[H]
+
+{\centering \pandocbounded{\includegraphics[keepaspectratio]{practica_visulizacion_datos_files/figure-pdf/unnamed-chunk-6-1.pdf}}
+
+}
+
+\caption{El gráfico de dispersión nos muestra la relación entre la
+tensión arterial sistólica y la tensión arterial diastólica. Podemos ver
+que hay una correlación positiva (0.64)entre ambas variables, lo que
+significa que a medida que aumenta la tensión arterial sistólica,
+también aumenta la tensión arterial diastólica. La correlación muestra
+ser significativa.}
+
+\end{figure}%
+
+\newpage
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{6}
+\tightlist
+\item
+  Realiza una gráfica de dispersión con las variables tensión arterial
+  sistólica y tensión arterial diastólica (limita el eje x a 250 y el
+  eje y a 200), agrupada por la presencia o ausencia de una enfermedad
+  cardiovascular. ¿Qué relación crees que existe entre estas tres
+  variables?
+\end{enumerate}
+
+\begin{figure}[H]
+
+{\centering \pandocbounded{\includegraphics[keepaspectratio]{practica_visulizacion_datos_files/figure-pdf/unnamed-chunk-7-1.pdf}}
+
+}
+
+\caption{El gráfico de dispersión como la figura anterior nos muestra la
+clara relación entre ambas medidas de tensiones arteriales, sin embargo
+no parece haber una relación entre ñas tres variables puesto que los
+valores de correlación son similares entre los pacientes con enfermedad
+cardiovascular y los pacientes sin enfermedad cardiovascular, lo que nos
+indica que la presencia de una enfermedad cardiovascular no afecta la
+relación entre ambas medidas de tensión arterial.}
+
+\end{figure}%
+
+\newpage
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{7}
+\tightlist
+\item
+  Realiza un boxplot con la variable peso y la variable de enfermedad
+  cardiovascular. ¿Qué puedes deducir sobre el peso de los pacientes con
+  enfermedades cardiovasculares?
+\end{enumerate}
+
+\begin{figure}[H]
+
+{\centering \pandocbounded{\includegraphics[keepaspectratio]{practica_visulizacion_datos_files/figure-pdf/unnamed-chunk-8-1.pdf}}
+
+}
+
+\caption{El boxplot nos muestra la distribucion del peso de los
+pacientes con y sin enfermedad cardiovascular. Podemos ver que los
+pacientes con enfermedad cardiovascular muestra una ligera tendencia a
+tener un peso mayor por la posición de su mediana ligeramente arriba de
+aquella perteneciente a los pacientes sin enfermedad cardiovascular, sin
+embargo ambas cuentan con valores atípicos por lo que una prueba
+estadística formal es necesaria para determinar si la diferencia es
+significativa.}
+
+\end{figure}%
+
+\newpage
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{8}
+\tightlist
+\item
+  Realiza un boxplot con la variable peso y la variable de enfermedad
+  cardiovascular, agrupadas por la variable ``fumar''. ¿Qué relación
+  existe entre las tres variables?
+\end{enumerate}
+
+\begin{figure}[H]
+
+{\centering \pandocbounded{\includegraphics[keepaspectratio]{practica_visulizacion_datos_files/figure-pdf/unnamed-chunk-9-1.pdf}}
+
+}
+
+\caption{El boxplot nos muestra la distribucion del peso de los
+pacientes con y sin enfermedad cardiovascular, agrupados por fumadores y
+no fumadores. Podemos ver que la tendencia entre ambos pacientes apunta
+a que aquellos que fuman tienden a tener un peso mayor que aquellos que
+no fuman. Siendo valores mayores en el grupo de pacientes con enfermedad
+cardiovascular, lo que nos puede indicar que el fumar es un factor de
+riesgo para la presencia de una enfermedad cardiovascular.}
+
+\end{figure}%
+
+\newpage
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{9}
+\tightlist
+\item
+  Realiza un heatmap de la edad en años, la presión arterial sistólica,
+  la presión arterial diastólica, la estatura y el peso, contra los
+  grupos obtenidos de las combinaciones entre las variables colesterol y
+  enfermedad cardiovascular (debes obtener un heatmap de 6x5).
+\end{enumerate}
+
+\begin{figure}[H]
+
+{\centering \pandocbounded{\includegraphics[keepaspectratio]{practica_visulizacion_datos_files/figure-pdf/unnamed-chunk-10-1.pdf}}
+
+}
+
+\caption{El hetmap nos muestra la media de las variables edad, presión
+arterial sistólica, presión arterial diastólica, estatura y peso, contra
+los grupos obtenidos de las combinaciones entre las variables colesterol
+y enfermedad cardiovascular. Podemos ver que los pacientes con
+colesterol muy alto y enfermedad cardiovascular tienen una media de edad
+mayor que aquellos con colesterol normal y sin enfermedad
+cardiovascular. Además, podemos ver que los pacientes con colesterol muy
+alto y enfermedad cardiovascular tienen una media de presión arterial
+sistólica y diastólica mayor que aquellos con colesterol normal y sin
+enfermedad cardiovascular. Esto nos puede indicar que el colesterol y la
+enfermedad cardiovascular están relacionados con la edad y la presión
+arterial.}
+
+\end{figure}%
+
+
+
+
+\end{document}

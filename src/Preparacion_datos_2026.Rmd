@@ -1,0 +1,139 @@
+---
+title: "Limpieza de datos, extracción de característica y reduccion de dimensionalidad"
+author: "Eli Sulvarán Guel y Carlos Francisco Méndez"
+date: "<small>`r Sys.Date()`</small>"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: yes
+    cod_folding: hide
+    center: yes
+    theme: sandstone
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+# Llamar librerías 
+Llamamos a la librerías requeridas para los análisis
+```{r}
+library(ggplot2) # gráficas
+library(qdap) # manipulacion de datos
+```
+
+# Limpieza de datos
+Para la primera parte de esta sesión, vamos a utilizar los datos de enfermedades cardiovasculares. Vamos a visualizar las primeras líneas del dataset. 
+```{r warning=FALSE}
+cvd <- read.csv(
+  "/mnt/c/Users/vrahu/Documents/Ismadlsh/CCG/2026-S5/Data_Science/data/cardiovascular_disease.csv"
+) # abrimos el archivo
+head(cvd) # observamos las primeras líneas
+```
+
+### Codificación
+Sabemos que este dataset contiene información sobre pacientes, y una de las columnas (gender) se refiere a su género. Un valor de 1 en esta columna significa "mujer" y de 2 significa "hombre". Podemos cambiar estos valores por "H" y "M" con la función *multigsub()* de la librería *qdap*
+```{r}
+cvd$gender <- multigsub(
+  sort(unique(cvd$gender)), # le pasamos el patrón que tiene que buscar, que en este caso es 1 y 2
+  c("M", "H"), # le pasamos el reemplazo que tiene que realizar en el mismo orden que el patrón que queremos que busque
+  cvd$gender
+) # le pasamos el vector sobre el que queremos que realice los cambios
+
+head(cvd)
+```
+
+Como podemos observar, ahora tenemos esta columna en valores categóricos. Podemos hacer lo mismo pero a la inversa, convirtiendo valores categóricos en numéricos
+```{r}
+cvd$gender <- multigsub(sort(unique(cvd$gender)), c(0, 1), cvd$gender)
+head(cvd)
+```
+
+Notamos que ahora lo tenemos como valores numéricos. A esto se le llama Codificación. 
+
+### Discretización
+Otro ejemplo de transformaciones sobre nuestros datos lo podemos aplicar a las edades. Primero vamos a visualizar como se distribuyen. 
+```{r}
+summary(cvd$age_year) # resumen de la variable edad
+ggplot(data = cvd, aes(age_year)) + # gráfica de la variable edad
+  geom_histogram(
+    aes(y = ..density..),
+    bins = 100,
+    color = "black",
+    fill = "white"
+  ) +
+  geom_density(alpha = 0.2, fill = "blue") +
+  labs(title = "Histograma de edades", x = "Edad", y = "Frecuencia")
+```
+
+Podemos notar que la menor edad es 29.58 y la mayor 64.97. Si quisieramos hacer análisis agrupando por edades, sería complicado, pues tendriamos demasiados grupos. Para solucionar este problema, podemos crear intervalos de edades con la función *findInterval()*, los cuales iran desde 20 hasta 70. 
+```{r}
+cvd$age_group <- findInterval(cvd$age_year, c(20, 30, 40, 50, 60, 70))
+head(cvd)
+```
+
+Ahora tenemos una columna con intervalos de edades. Sin embargo, sería más útil que tuvieramos las edades no por grupos de números, sino con los intervalos. Para esto, nuevamente vamos a usar la función *multigsub()*. 
+```{r}
+cvd$age_group <- multigsub(
+  sort(unique(cvd$age_group)), # patrón a buscar
+  c("20-30", "30-40", "40-50", "50-60", "60-70"), # reemplazo
+  cvd$age_group
+) # objeto sobre el cual reemplazar
+head(cvd)
+```
+
+Las edades ya estan agrupadas por intervalo. Ahora simplemente vamos a gráficar la frecuencia de cada grupo de edad. 
+```{r}
+age_group <- as.data.frame(table(cvd$age_group)) # obtenemos frecuencia con table
+
+ggplot(age_group, aes(x = Var1, y = Freq, fill = Var1)) + # graficamos
+  geom_bar(stat = "identity") +
+  theme(legend.position = "none") +
+  labs(
+    title = "Frecuencia de grupos de edades",
+    x = "Grupo de edad",
+    y = "Frecuencia"
+  )
+```
+
+### Eliminar datos faltantes
+Algunas veces, nuestros datasets pueden tener columnas donde algunos de los valores sean NULL o NA. No es el caso del dataset con el que estamos trabajando, entonces vamos a simular un vector que contenga NAs para observar como trabajar con ellos. 
+```{r}
+cvd$Test <- sample(
+  c(1:10, NA), # creamos un sample de un vector con valores del 1 al 10 y NA
+  prob = 11:1, # asignamos probabilidades a cada elemento
+  size = 70000, # determinamos el tamaño del dataset
+  replace = T
+) # permitimos que el sample se haga con reemplazo.
+head(cvd)
+```
+
+Como podemos notar, ya tenemos un dataset con una columna con valores faltantes. ¿Que pasa si queremos trabajar con ella?
+```{r}
+mean(cvd$Test) # esto nos devuelve NA, debido a que no todos los valores son numéricos. Podemos solucionar este problema especificando el parametro na.rm = TRUE (https://www.statology.org/na-rm/)
+mean(cvd$Test, na.rm = TRUE) # ahora si obtenemos la media.
+```
+
+Pero, ¿que pasaría si quisieramos obtener, por ejemplo, una correlación? ¿O si quisieramos hacer cualquier cosa que implique trabajar con otra columna?
+```{r}
+cor(cvd$Test, cvd$age_days) # esto nuevamente devuelve NA, y la función cor no tiene el parámetro na.rm
+```
+
+Podemos eliminar todas las filas que tienen NA en alguna columna simplemente usando la función *na.omit()*. Sin embargo, es importante considerar que dado que se eliminaran las filas completas que contengan valores faltantes, lo más recomendable siempre es hacer esto desde un inicio para que no haya inconsistencias en nuestros datos, y no trabajemos con objetos de diferentes dimensiones. 
+```{r}
+print("Dimensiones antes: ")
+dim(cvd)
+cvd <- na.omit(cvd)
+print("Dimensiones después: ")
+dim(cvd) # observamos que ahora tenemos menos observaciones que antes
+```
+
+Con esto ya podemos facilmente obtener medias, correlaciones y gráficas sin problemas. 
+```{r}
+mean(cvd$Test)
+cor(cvd$Test, cvd$age_days)
+k
+```
+
+Podemos observar que no existe una correlación. Pero no importa! Ya sabemos como eliminar datos faltantes :)
