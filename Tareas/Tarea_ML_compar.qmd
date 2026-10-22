@@ -7,7 +7,7 @@ format:
   pdf:
     pdf-engine: pdflatex
     documentclass: article
-    include-before-body: portada_P_DT.tex
+    include-before-body: portada_P3.tex
     geometry:
       - margin=2cm
     fontsize: 10pt
@@ -53,8 +53,9 @@ editor: visual
 --- 
 
 ```{r, set_up}
-# | echo: false
-# | eval: true
+#| echo: false
+#| eval: true
+#| tbl-pos: "H"
 
 library(tibble)
 library(dplyr)
@@ -68,11 +69,12 @@ library(grid)
 
 # Planteamiento 
 
-Esta práctica pretende evaluar el desemepño de 3 algortimos de machine learning (Desición Tree,Randon forest y SVM) a partir de un data set con una columna predictora de interes y 12 caracteristicas que se pueden utilizar para el entrenamiento del modelo, de las cuales se utilizaron 11 variables predictoras por la redudancia de la edad de los 70000 individuos en el data-set por lo que se opto por la edad en años eliminando la columna de días.
+Esta práctica pretende evaluar el desempeño de 3 algoritmos de machine learning (ML) (Decision Tree, Random Forest y SVM) a partir de un dataset con una variable objetivo de interés y 12 características que se pueden utilizar para el entrenamiento del modelo. De estas, se utilizaron 11 variables predictoras debido a la redundancia de la edad de los 70000 individuos en el dataset, por lo que se optó por conservar la edad en años y eliminar la columna de días.
 
 ```{r, tabla_data_set}
-# | echo: false
-# | eval: true
+#| echo: false
+#| eval: true
+#| tbl-pos: "H"
 
 data_set = read.csv(
   "/export/space3/users/ismadlsh/LCG/S5/Data_science_class/data/cardiovascular_disease.csv",
@@ -81,7 +83,7 @@ data_set = read.csv(
 
 #eliminar la edad en días
 col_t = colnames(data_set)
-data_set = dplyr::select(col_t[col_t != "age_days"])
+data_set = dplyr::select(data_set, col_t[col_t != "age_days"])
 
 knitr::kable(
   head(data_set),
@@ -96,7 +98,8 @@ knitr::kable(
 
 # Preparación de datos y División 
 
-El dataset fue dividido en conjuntos de entrenamiento (para ser aplicado mediante validación cruzada) y prueba de manera aleatoría estratificada (conservar la proporción real de nuestras clases de interés) con un tamaño de prueba del 20 % y un random state de 42 para garantizar la reproducibilidad separando la columna de interes. 
+El dataset fue dividido en conjuntos de entrenamiento (para ser aplicado mediante validación cruzada) y prueba de manera aleatoria estratificada (para conservar la proporción real de nuestras clases de interés) con un tamaño de prueba del 20 % y un `random_state` de 42 para garantizar la reproducibilidad, separando la variable objetivo.
+
 
 | Class   | Tamaño total | Entrenamiento | Test |
 |---------------|-------------:|--------------:|-----:|
@@ -105,20 +108,21 @@ El dataset fue dividido en conjuntos de entrenamiento (para ser aplicado mediant
 | Clase 1       |        34979 |         27983 |  6996 |
 
 
-Los datos se ven balanceados en cuanto a las categorias de clase de nuestra var de interes `cardio` y con esta división y el formato escalado y no escalado se procedio con la cración de los modelos.
+Los datos se ven balanceados en cuanto a las categorías de clase de nuestra variable de interés `cardio` y, con esta división y el formato escalado y no escalado, se procedió con la creación de los modelos.
 
 # Modelos
 
 ## Entrenamiento 
 
-El entrenamiento para todos los modelos se realizo mediante la estrategia de validación cruzada con un total de 5 foldsy una grid de hiperparametros personalizada para cada modelo 
+El entrenamiento para todos los modelos se realizó mediante la estrategia de validación cruzada con un total de 5 folds y una grid de hiperparámetros personalizada para cada modelo.
 
-### Desicion trees (DT)
-Para los arboles de desición se utiliaron los hiperparametros **criterion** y **class_weight** con valores `gini, entropy` y `balanced, None` respectivamente; dando un total de 4 modelos a entrenar:
+### Decision Trees (DT)
+Para los árboles de decisión se utilizaron los hiperparámetros **criterion** y **class_weight** con valores `gini, entropy` y `balanced, None` respectivamente; dando un total de 4 modelos a entrenar:
 
 ```{r, grid_DT}
-# | echo: false
-# | eval: true
+#| echo: false
+#| eval: true
+#| tbl-pos: "H"
 
 DS_grid = read.csv(
   "/export/space3/users/ismadlsh/LCG/S5/Data_science_class/res/ML_compar/Test/DT_scaled_grid_hip.csv",
@@ -139,17 +143,18 @@ knitr::kable(
   )
 ``` 
 
->El tiempo total de entrenamiento fue: 
+>El tiempo total de entrenamiento para el DT con 20 runs fue: 
 >Scaled = 4.91 segundos
 >Unscaled= 4.84 segundos
 
 ### Random Forest (RF)
 
-Para el caso del random forest se utilizaron los hiperparametros **class_weight** con valores de `balanced y None` **criterion** con valores de `gini, entropy` y el hiperparametro que controla el número de arboles **n_estimators** con valores de 50 hasta 500 con un paso de 50 en 50; dando un total de 40 modelos a entrenar
+Para el caso del Random Forest se utilizaron los hiperparámetros **class_weight** con valores de `balanced, None`, **criterion** con valores de `gini, entropy` y el hiperparámetro que controla el número de árboles **n_estimators** con valores de 50 hasta 500 con un paso de 50 en 50; dando un total de 40 modelos a entrenar.
 
 ```{r, grid_RF}
-# | echo: false
-# | eval: true
+#| echo: false
+#| eval: true
+#| tbl-pos: "H"
 
 RF_grid = read.csv(
   "/export/space3/users/ismadlsh/LCG/S5/Data_science_class/res/ML_compar/Test/RF_scaled_grid_hip.csv",
@@ -170,19 +175,21 @@ knitr::kable(
   )
 ``` 
 
->El tiempo total de entrenamiento fue: 
+>El tiempo total de entrenamiento para el RF con 200 runs fue: 
 >Scaled = 46.7 minutos
 >Unscaled= 46.38 minutos
 
-### Suported vector machines (SVM)
-
-Finalmete las maquinas de vectores de soporte se entrenaron con 2 hiperparametros 
-**HP** con valores de `linear, rbf y poly` y el hiperparametro **C** que controla el castigo a los vectores dentro del margen del hiperplano con valores de 1 a 10 con un paso de 1 en 1; dando un total de 30 modelos a entrenar
 
 
-```{r, grid_RF}
-# | echo: false
-# | eval: true
+### Support Vector Machines (SVM)
+
+Finalmente, las máquinas de vectores de soporte se entrenaron con 2 hiperparámetros: **kernel** con valores de `linear, rbf, poly`, y el hiperparámetro **C**, que controla la penalización a los vectores dentro del margen del hiperplano, con valores de 1 a 10 con un paso de 1 en 1; dando un total de 30 modelos a entrenar.
+
+
+```{r, grid_SVM}
+#| echo: false
+#| eval: true
+#| tbl-pos: "H"
 
 SVM_grid = read.csv(
   "/export/space3/users/ismadlsh/LCG/S5/Data_science_class/res/ML_compar/Test/SVM_scaled_grid_hip.csv",
@@ -203,16 +210,124 @@ knitr::kable(
   )
 ``` 
 
->El tiempo total de entrenamiento fue: 
+>El tiempo total de entrenamiento para las SVM con 150 runs fue: 
 >Scaled = 5.16 horas
 >Unscaled= 63.31 horas
 
+
+| Modelo | Escalado | Runs | Tiempo total de entrenamiento |
+|--------|:--------:|-----:|-------------------------------|
+| DT | Scaled | 20 | 4.91 segundos |
+| DT | Unscaled | 20 | 4.84 segundos |
+| RF | Scaled | 200 | 46.7 minutos |
+| RF | Unscaled | 200 | 46.38 minutos |
+| SVM | Scaled | 150 | 5.16 horas |
+| SVM | Unscaled | 150 | 63.31 horas |
+
+
 ## Evaluación 
 
+Finalmente, se hizo la evaluación de los modelos con el set separado al inicio y se obtuvo el reporte de clasificación, así como la matriz de confusión de los resultados.
 
+### Resultados generales 
+
+Para hacer la comparación total de todos los mejores modelos por cada set de entrenamiento, se resumió el reporte de clasificación en la siguiente tabla:
+
+```{r, general_res}
+#| echo: false
+#| eval: true
+#| tbl-pos: "H"
+
+wide_res = read.csv(
+  "/export/space3/users/ismadlsh/LCG/S5/Data_science_class/res/ML_compar/ML_compar_p_final_compar_res.csv",
+  row.names = 1
+)
+
+index = wide_res$Model
+
+#correct the switch information
+index = gsub("_scaled", 1, index)
+index = gsub("_unscaled", 2, index)
+index = gsub("1", "_unscaled", index)
+index = gsub("2", "_scaled", index)
+row.names(wide_res) = index
+wide_res$Model = NULL
+
+#limpiar los hiperparametros
+wide_res$hiperparameters = gsub("\\{", "", wide_res$hiperparameters)
+wide_res$hiperparameters = gsub("\\}", "", wide_res$hiperparameters)
+wide_res$hiperparameters = gsub("'", "", wide_res$hiperparameters)
+wide_res$hiperparameters = gsub("np.int64\\(", "", wide_res$hiperparameters)
+wide_res$hiperparameters = gsub("\\)", "", wide_res$hiperparameters)
+
+columns_t = colnames(wide_res)
+#round values
+for (col in columns_t) {
+  if (typeof(wide_res[, col]) == "double") {
+    wide_res[, col] = round(wide_res[, col], digits = 3)
+  }
+}
+knitr::kable(
+  wide_res,
+  format = "latex",
+  booktabs = TRUE,
+  caption = "Resultados completos del entrenamiento y reporte de clasificación de la evaluación"
+) %>%
+  kable_styling(
+    latex_options = c("hold_position", "scale_down", "repeat_header")
+  )
+``` 
+
+A nivel intra-tipo de algoritmo, se puede observar cómo la variación de las métricas de rendimiento de la predicción del modelo varía muy poco entre aquel entrenado con los datos escalados y no escalados, siendo que la variación más grande es de 5 milésimas entre todas las métricas. Asimismo, no existe evidencia de sobreajuste por parte de ningún modelo, por lo que podemos decir que nuestro entrenamiento capturó de buena manera la heterogeneidad de los datos, en gran parte por el número tan alto que se utilizó para el mismo.
+
+Por parte de los árboles de decisión, la variación entre datos escalados y datos sin escalar en relación a los mejores hiperparámetros identificados en el entrenamiento es nula. 
+
+En el caso de los modelos de Random Forest, el tipo de datos sí tuvo influencia en la selección de parámetros, pues se ve cómo el modelo más simple es relativo a los datos escalados, con un total de 250 árboles y sin considerar a las categorías con menor número de clases, y cuya diferencia en cuanto a rendimiento en la evaluación no cambia, por lo que, por parsimonia, sería mejor elegir este modelo.
+
+Finalmente, observamos que el SVM sigue la misma tendencia de los modelos de RF, teniendo el modelo con datos escalados como el más simple; no obstante, en este caso sí es mayor el rendimiento de aquel entrenado con los datos escalados. Algo interesante del desempeño de la SVM es que los valores elegidos de C son significativamente lejanos al por defecto de 1, esto nos puede dar una idea del número de vectores dentro del margen y por qué son tan castigados por este hiperparámetro para lograr el mejor desempeño.
+
+Por otro lado, a nivel inter-algoritmo vemos una diferencia mayor, siendo el SVM aquel algoritmo con mejores métricas en su versión escalada, con una lejanía de más de 10 centésimas con respecto al mejor modelo del árbol de decisión.
+
+\newpage
+
+### Matrices de confusión 
+
+#### DT
+![Matriz de confusión de DT en ambas modalidades del escalamiento de datos.](../res/ML_compar/Train/ML_compar_p_DT_confusion_matrix_corr.png){#fig-aligned-vs-time fig-pos="H" width="85%" fig-align="center"}
+
+Como ya nos adelantaba el reporte de clasificación, las estadísticas no varían entre modelos elegidos ni entre clases, siendo igual de sensible para la clase 1 como para la 0 con unas proporciones relativamente bajas de 0.64.
+
+\newpage
+
+#### RF
+![Matriz de confusión de RF en ambas modalidades del escalamiento de datos.](../res/ML_compar/Train/ML_compar_p_RF_confusion_matrix_corr.png){#fig-aligned-vs-time fig-pos="H" width="85%" fig-align="center"}
+
+Al igual que los árboles de decisión, la diferencia entre modelos es muy baja, así como entre clases, siendo el desempeño del modelo escalado mejor con proporciones superiores al DT.
+
+\newpage
+
+#### SVM
+![Matriz de confusión de SVM en ambas modalidades del escalamiento de datos.](../res/ML_compar/Train/ML_compar_p_SVM_confusion_matrix_corr.png){#fig-aligned-vs-time fig-pos="H" width="85%" fig-align="center"}
+
+En el caso de los dos SVM, se puede observar cómo el rendimiento entre ambos modelos sí es distinto, particularmente en la predicción de la clase 1 (con cardiopatía), siendo el modelo escalado aquel con mejor desempeño y relativamente similar al RF.
+
+\newpage
 
 # Discusión 
 
+En esta comparación entre los 3 algoritmos de ML, se pudo comprobar cómo los algoritmos de RF y SVM son superiores al DT para estos datos en todas las métricas de clasificación evaluadas, siendo que las diferencias entre ambas son bastante bajas, así como entre modelos entrenados con datos escalados y sin escalar. Es relevante mencionar que el modelo sin escalar RF fue superior en su capacidad predictiva para la clase 1 de nuestra variable de interés, demostrando una sensibilidad de la SVM a los datos sin escalar. Esto podría deberse a la representación de los vectores y a la dificultad de encontrar un hiperplano en ese modelo en específico, puesto que fue aquel con el hiperparámetro C más alto (máximo posible en esta comparación de 10), así como el tiempo de entrenamiento significativamente más grande de 63 hrs.
 
+Este último punto es importante de destacar, puesto que el segundo método con más tiempo de cómputo utilizado fue el SVM escalado, teniendo un tiempo 7 veces mayor en comparación con ambos RF. Esto denota un claro *trade-off* entre recursos y un desempeño no tan superior como se esperaría. 
 
 # Conclusión 
+
+En conclusión, el RF escalado surge como el mejor modelo evaluado en términos de precisión por tiempo de cómputo, ya que, a pesar de que la SVM escalada tuvo un mejor desempeño, parece ser más sensible a los datos sin escalar, además de aumentar considerablemente su tiempo de cómputo en el entrenamiento con este set de datos. 
+
+---
+
+# Referencias: 
+
+
+1. Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J., Passos, A., Cournapeau, D., Brucher, M., Perrot, M., & Duchesnay, E. (2011). *Scikit-learn: Machine Learning in Python*. Journal of Machine Learning Research, 12, 2825–2830.
+
+2. Greener, J. G., Kandathil, S. M., Moffat, L., & Jones, D. T. (2021). *A guide to machine learning for biologists*. Nature Reviews Molecular Cell Biology, 23(1), 40-55. https://doi.org/10.1038/s41580-021-00407-0
