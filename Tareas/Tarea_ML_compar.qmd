@@ -1,0 +1,218 @@
+---
+title: "Práctica arboles de desición"
+author: "Ismael Maximiliano De Los Santos Huesca"
+date: today
+
+format:
+  pdf:
+    pdf-engine: pdflatex
+    documentclass: article
+    include-before-body: portada_P_DT.tex
+    geometry:
+      - margin=2cm
+    fontsize: 10pt
+    number-sections: true
+    fig-cap-location: bottom
+    df-print: kable
+    keep-tex: true
+
+execute:
+  echo: true
+  warning: false
+  message: false
+  eval: true
+  freeze: auto
+  cache: true
+
+project:
+  type: default
+  execute-dir: project
+
+
+code-block-font-size: \footnotesize
+
+header-includes:
+  - \usepackage{graphicx}
+  - \usepackage{amsmath}
+  - \usepackage{booktabs}
+  - \usepackage{float}
+  - \usepackage{caption}
+  - \usepackage{setspace}
+  - \usepackage{fancyhdr}
+  - \captionsetup{font=small}
+
+  # Interlineado sencillo
+  - \singlespacing
+
+  # Numeración de páginas
+  - \pagestyle{fancy}
+  - \fancyhf{}
+  - \fancyfoot[C]{\thepage}
+
+editor: visual
+--- 
+
+```{r, set_up}
+# | echo: false
+# | eval: true
+
+library(tibble)
+library(dplyr)
+library(knitr)
+library(tidyr)
+library(kableExtra)
+library(R6)
+library(gridExtra)
+library(grid)
+``` 
+
+# Planteamiento 
+
+Esta práctica pretende evaluar el desemepño de 3 algortimos de machine learning (Desición Tree,Randon forest y SVM) a partir de un data set con una columna predictora de interes y 12 caracteristicas que se pueden utilizar para el entrenamiento del modelo, de las cuales se utilizaron 11 variables predictoras por la redudancia de la edad de los 70000 individuos en el data-set por lo que se opto por la edad en años eliminando la columna de días.
+
+```{r, tabla_data_set}
+# | echo: false
+# | eval: true
+
+data_set = read.csv(
+  "/export/space3/users/ismadlsh/LCG/S5/Data_science_class/data/cardiovascular_disease.csv",
+  row.names = 1
+)
+
+#eliminar la edad en días
+col_t = colnames(data_set)
+data_set = dplyr::select(col_t[col_t != "age_days"])
+
+knitr::kable(
+  head(data_set),
+  format = "latex",
+  booktabs = TRUE,
+  caption = "Data set con todas las variables presente en el mismo"
+) %>%
+  kable_styling(
+    latex_options = c("hold_position", "scale_down", "repeat_header")
+  )
+``` 
+
+# Preparación de datos y División 
+
+El dataset fue dividido en conjuntos de entrenamiento (para ser aplicado mediante validación cruzada) y prueba de manera aleatoría estratificada (conservar la proporción real de nuestras clases de interés) con un tamaño de prueba del 20 % y un random state de 42 para garantizar la reproducibilidad separando la columna de interes. 
+
+| Class   | Tamaño total | Entrenamiento | Test |
+|---------------|-------------:|--------------:|-----:|
+| Tamaño total  |        70000 |         56000 | 14000 |
+| Clase 0       |        35021 |         28017 |  7004 |
+| Clase 1       |        34979 |         27983 |  6996 |
+
+
+Los datos se ven balanceados en cuanto a las categorias de clase de nuestra var de interes `cardio` y con esta división y el formato escalado y no escalado se procedio con la cración de los modelos.
+
+# Modelos
+
+## Entrenamiento 
+
+El entrenamiento para todos los modelos se realizo mediante la estrategia de validación cruzada con un total de 5 foldsy una grid de hiperparametros personalizada para cada modelo 
+
+### Desicion trees (DT)
+Para los arboles de desición se utiliaron los hiperparametros **criterion** y **class_weight** con valores `gini, entropy` y `balanced, None` respectivamente; dando un total de 4 modelos a entrenar:
+
+```{r, grid_DT}
+# | echo: false
+# | eval: true
+
+DS_grid = read.csv(
+  "/export/space3/users/ismadlsh/LCG/S5/Data_science_class/res/ML_compar/Test/DT_scaled_grid_hip.csv",
+  row.names = 1
+)
+
+#ordenar por la primer columnas
+DS_grid = DS_grid %>% arrange(colnames(DS_grid)[1])
+
+knitr::kable(
+  DS_grid,
+  format = "latex",
+  booktabs = TRUE,
+  caption = "Grid de entrenamiento usada para los arboles de desición"
+) %>%
+  kable_styling(
+    latex_options = c("hold_position", "scale_down", "repeat_header")
+  )
+``` 
+
+>El tiempo total de entrenamiento fue: 
+>Scaled = 4.91 segundos
+>Unscaled= 4.84 segundos
+
+### Random Forest (RF)
+
+Para el caso del random forest se utilizaron los hiperparametros **class_weight** con valores de `balanced y None` **criterion** con valores de `gini, entropy` y el hiperparametro que controla el número de arboles **n_estimators** con valores de 50 hasta 500 con un paso de 50 en 50; dando un total de 40 modelos a entrenar
+
+```{r, grid_RF}
+# | echo: false
+# | eval: true
+
+RF_grid = read.csv(
+  "/export/space3/users/ismadlsh/LCG/S5/Data_science_class/res/ML_compar/Test/RF_scaled_grid_hip.csv",
+  row.names = 1
+)
+
+#ordenar por la primer columnas
+RF_grid = RF_grid %>% arrange(colnames(RF_grid)[1])
+
+knitr::kable(
+  RF_grid,
+  format = "latex",
+  booktabs = TRUE,
+  caption = "Grid de entrenamiento usada para los Random Forest"
+) %>%
+  kable_styling(
+    latex_options = c("hold_position", "scale_down", "repeat_header")
+  )
+``` 
+
+>El tiempo total de entrenamiento fue: 
+>Scaled = 46.7 minutos
+>Unscaled= 46.38 minutos
+
+### Suported vector machines (SVM)
+
+Finalmete las maquinas de vectores de soporte se entrenaron con 2 hiperparametros 
+**HP** con valores de `linear, rbf y poly` y el hiperparametro **C** que controla el castigo a los vectores dentro del margen del hiperplano con valores de 1 a 10 con un paso de 1 en 1; dando un total de 30 modelos a entrenar
+
+
+```{r, grid_RF}
+# | echo: false
+# | eval: true
+
+SVM_grid = read.csv(
+  "/export/space3/users/ismadlsh/LCG/S5/Data_science_class/res/ML_compar/Test/SVM_scaled_grid_hip.csv",
+  row.names = 1
+)
+
+#ordenar por la primer columnas
+SVM_grid = SVM_grid %>% arrange(colnames(SVM_grid)[1])
+
+knitr::kable(
+  SVM_grid,
+  format = "latex",
+  booktabs = TRUE,
+  caption = "Grid de entrenamiento usada para las Maquinas de soporte de vectores"
+) %>%
+  kable_styling(
+    latex_options = c("hold_position", "scale_down", "repeat_header")
+  )
+``` 
+
+>El tiempo total de entrenamiento fue: 
+>Scaled = 5.16 horas
+>Unscaled= 63.31 horas
+
+## Evaluación 
+
+
+
+# Discusión 
+
+
+
+# Conclusión 
