@@ -4,6 +4,7 @@
 *.docx
 *cache
 *.pdf
+*.log
 
 #data files
 data/**/*.csv

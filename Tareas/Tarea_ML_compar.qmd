@@ -1,5 +1,5 @@
 ---
-title: "Práctica arboles de desición"
+title: "Práctica comparación DT, RF y SVM"
 author: "Ismael Maximiliano De Los Santos Huesca"
 date: today
 
