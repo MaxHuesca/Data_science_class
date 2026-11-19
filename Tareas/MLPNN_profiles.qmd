@@ -2,6 +2,7 @@
 title: "Práctica perfiles usando una MLP"
 author: "Ismael Maximiliano De Los Santos Huesca"
 date: today
+engine: knitr
 
 format:
   pdf:
@@ -53,9 +54,10 @@ editor: visual
 ---
 
 ```{python set_up}
-#| echo: true
+#| echo: false
 #| eval: false
 #| warning: false
+#| python.reticulate: false
 
 import pandas as pd
 
@@ -78,7 +80,11 @@ from sklearn.metrics import (
 import matplotlib.pyplot as plt
 ```
 
+<<<<<<< HEAD
 # Carga de Datos y preprocesamiento
+=======
+# Carga de Datos y preprocesamiento#| python.reticulate: false
+>>>>>>> bf8c6e0 (Finall format of MLP profile expression prediction)
 
 ## Lectura de datos y exploración inicial
 
@@ -86,16 +92,23 @@ import matplotlib.pyplot as plt
 #| echo: true
 #| eval: false
 #| warning: false
+#| python.reticulate: false
 
-#leer los data sets
-df_data= pd.read_csv("/mnt/c/Users/vrahu/Documents/Ismadlsh/CCG/2026-S5/Data_Science/data/perfiles.csv", index_col=0).rename_axis(None)
+# leer los data sets
+df_data = pd.read_csv(
+    "/mnt/c/Users/vrahu/Documents/Ismadlsh/CCG/2026-S5/Data_Science/data/perfiles.csv",
+    index_col=0,
+).rename_axis(None)
 
-df_cathegories= pd.read_csv("/mnt/c/Users/vrahu/Documents/Ismadlsh/CCG/2026-S5/Data_Science/data/categorias_perfiles.csv", index_col=0).rename_axis(None)
+df_cathegories = pd.read_csv(
+    "/mnt/c/Users/vrahu/Documents/Ismadlsh/CCG/2026-S5/Data_Science/data/categorias_perfiles.csv",
+    index_col=0,
+).rename_axis(None)
 
-#unir los data sets por el index
-df_data=pd.merge(df_data, df_cathegories, left_index=True, right_index=True)
+# unir los data sets por el index
+df_data = pd.merge(df_data, df_cathegories, left_index=True, right_index=True)
 print("Dimensionalidad de datos:", df_data.shape)
-class_u=df_cathegories.Categoria.unique()
+class_u = df_cathegories.Categoria.unique()
 print("Categorías verdaderas únicas:", class_u)
 df_data.head()
 ```
@@ -108,13 +121,18 @@ Se observo que el dataset contiene 20531 genes y 5 categorías de perfiles de ex
 #| echo: true
 #| eval: false
 #| warning: false
+#| python.reticulate: false
 
-cat_ids={cat_u: i for i, cat_u in enumerate(class_u)}
+cat_ids = {cat_u: i for i, cat_u in enumerate(class_u)}
 
-ids_cat={cat[1]:cat[0] for cat in cat_ids.items()}
-
+ids_cat = {cat[1]: cat[0] for cat in cat_ids.items()}
 ```
 
+<<<<<<< HEAD
+```
+
+=======
+>>>>>>> bf8c6e0 (Finall format of MLP profile expression prediction)
 ## Split de los datos
 
 Consiguientemente se dividieron los datos en un 80% para entrenamiento y un 20% para prueba, estratificando por la variable de categoría para mantener la proporción de clases en ambos conjuntos.
@@ -123,9 +141,11 @@ Consiguientemente se dividieron los datos en un 80% para entrenamiento y un 20% 
 #| echo: true
 #| eval: false
 #| warning: false
+#| python.reticulate: false
 
 
-df_train, df_test = train_test_split(df_data, test_size=0.2, random_state=42, stratify=df_data.Categoria)
+df_train, df_test = train_test_split(df_data, 
+    test_size=0.2, random_state=42, stratify=df_data.Categoria)
 
 print("Dimensionalidad de datos de entrenamiento:", df_train.shape)
 print("Dimensionalidad de datos de prueba:", df_test.shape)
@@ -139,6 +159,7 @@ print("Dimensionalidad de datos de prueba:", df_test.shape)
 #| echo: true
 #| eval: false
 #| warning: false
+#| python.reticulate: false
 
 # Definición de la clase a partir del módulo Dataset de PyTorch
 class PerfilesDataset(Dataset):
@@ -150,8 +171,6 @@ class PerfilesDataset(Dataset):
         self.len = len(dataframe)
 
     def __getitem__(self, index):
-        # El argumento "index" es un índice numérico desde 0 hasta el último registro el DataFrame
-
         # Guardamos en una variable el perfil de expresión separado de la categoría
         # El procedimiento "drop" con "axis = 1" elimina una columna del DataFrame
         # El procedimiento "iloc" localiza y entrega el registro "index" del DataFrame
@@ -171,7 +190,8 @@ class PerfilesDataset(Dataset):
         # Procedimiento obligatorio para regresar el número de renglones del DataSet
         return self.len
 
-#asignar los datasets al objeto creado en la clase 
+
+# asignar los datasets al objeto creado en la clase
 dataset_train = PerfilesDataset(dataframe=df_train)
 dataset_test = PerfilesDataset(dataframe=df_test)
 ```
@@ -182,6 +202,7 @@ dataset_test = PerfilesDataset(dataframe=df_test)
 #| echo: true
 #| eval: false
 #| warning: false
+#| python.reticulate: false
 
 #seleccionar el tamaño de lote 
 batch_size = 8
@@ -197,6 +218,7 @@ dataloader_test = DataLoader(dataset_test, batch_size=batch_size, shuffle=False)
 #| echo: true
 #| eval: false
 #| warning: false
+#| python.reticulate: false
 
 if torch.cuda.is_available():
     device = "cuda"
@@ -235,10 +257,11 @@ print(red_mlp)
 
 Como parte de la arquitectura de la red se usaron la función de perdida por cruce de entropía y el optimizador Adam con una tasa de aprendizaje de 0.0001.
 
-```{python device}
+```{python hiper_func}
 #| echo: true
 #| eval: false
 #| warning: false
+#| python.reticulate: false
 
 funcion_de_perdida = nn.CrossEntropyLoss()
 optimizador_de_pesos = torch.optim.Adam(red_mlp.parameters(), lr=0.0001)
@@ -246,10 +269,11 @@ optimizador_de_pesos = torch.optim.Adam(red_mlp.parameters(), lr=0.0001)
 
 ### Función de entrenamiento
 
-```{python device}
+```{python train_func}
 #| echo: true
 #| eval: false
 #| warning: false
+#| python.reticulate: false
 
 def train(dataloader, red, funcion_perdida, optimizador):
     total_de_registros = len(dataloader.dataset)
@@ -277,15 +301,26 @@ def train(dataloader, red, funcion_perdida, optimizador):
             # Calculamos registros procesados multiplicando el número de lote (`lote`) por la cantidad de registros del lote (`X`)
             registros_procesados = (lote + 1) * len(X)
             # item() regresa el valor del tensor en tipo numérico de Python
-            print("Valor de función de pérdida:", valor_de_perdida.item(), "Lote:", lote, "Registros:[", registros_procesados, "/", total_de_registros, "]")
+            print(
+                "Valor de función de pérdida:",
+                valor_de_perdida.item(),
+                "Lote:",
+                lote,
+                "Registros:[",
+                registros_procesados,
+                "/",
+                total_de_registros,
+                "]",
+            )
 ```
 
 ### Función de evaluación
 
-```{python device}
+```{python test_func}
 #| echo: true
 #| eval: false
 #| warning: false
+#| python.reticulate: false
 
 def test(dataloader, red, funcion_perdida):
     total_de_registros = len(dataloader.dataset)
@@ -310,10 +345,12 @@ def test(dataloader, red, funcion_perdida):
             logits = red(X)
 
             cat_predichas = torch.argmax(logits, dim=1)
-            # Obtenemos el valor de la función de pérdida acumulado y predicciones correctas acumuladas
+            # Obtenemos el valor de la función de pérdida
+            # acumulado y predicciones correctas acumuladas
             valor_de_perdida = funcion_de_perdida(logits, y).item()
             valor_de_perdida_acumulado = valor_de_perdida_acumulado + valor_de_perdida
-            # Obtenemos predicciones correctas (True|False) comparando el índice del valor máximo de los logits con la categoría verdadera
+            # Obtenemos predicciones correctas (True|False)
+            # comparando el índice del valor máximo de los logits con la categoría verdadera
             # argmax(1) regresa el índice del valor máximo en el tensor.
             predicciones_correctas = logits.argmax(1) == y
             # Convertimos predicciones correctas en números
@@ -324,7 +361,8 @@ def test(dataloader, red, funcion_perdida):
             predicciones_correctas_acumuladas = (
                 predicciones_correctas_acumuladas + predicciones_correctas
             )
-            # Juntamos en listas de forma acumulada las categorías predichas y las categorías verdaderas
+            # Juntamos en listas de forma acumulada
+            # las categorías predichas y las categorías verdaderas
             lista_cat_predichas.extend(cat_predichas.tolist())
             lista_cat_verdaderas.extend(y.tolist())
     # test_loss /= num_batche
@@ -339,10 +377,11 @@ def test(dataloader, red, funcion_perdida):
 
 Para la run se no se utilizo un numero de épocas fijo, sino que se estableció un criterio de convergencia basado en la diferencia de accuracy entre épocas consecutivas. Si la diferencia es menor a 0.0000001 durante 3 épocas consecutivas, se considera que el modelo ha convergido y se detiene el entrenamiento.
 
-```{python device}
+```{python run_train}
 #| echo: true
 #| eval: false
 #| warning: false
+#| python.reticulate: false
 
 err = 0.0000001
 conver = 0
@@ -363,22 +402,24 @@ Durante la fase de entrenamiento se obtuvo un valor convergente de accuracy de 0
 
 ## Metricas redimiento
 
-```{python device}
+```{python res_metrics}
 #| echo: true
 #| eval: false
 #| warning: false
+#| python.reticulate: false
 
-# Obtenemos metricas de evaluación comparando las categorías predichas con las categorías verdaderas
-print("F1-score: %0.2f" % f1_score(cat_true, cat_pred, average='macro'))
-print("Precision: %0.2f" % precision_score(cat_true, cat_pred, average='macro'))
-print("Recall: %0.2f" % recall_score(cat_true, cat_pred, average='macro'))
+# Obtenemos metricas de evaluación comparando
+# las categorías predichas con las categorías verdaderas
+print("F1-score: %0.2f" % f1_score(cat_true, cat_pred, average="macro"))
+print("Precision: %0.2f" % precision_score(cat_true, cat_pred, average="macro"))
+print("Recall: %0.2f" % recall_score(cat_true, cat_pred, average="macro"))
 print("Reporte de clasificación")
 # Obtenemos reporte de clasificación
 print(classification_report(cat_true, cat_pred, output_dict=True))
 
-#creamos el df con los valores 
-report_dic=classification_report(cat_true, cat_pred, output_dict=True)
-df_report=pd.DataFrame(report_dic).transpose()
+# creamos el df con los valores
+report_dic = classification_report(cat_true, cat_pred, output_dict=True)
+df_report = pd.DataFrame(report_dic).transpose()
 ```
 
 |    Class     | precision |   recall | f1-score |    support |
@@ -395,10 +436,11 @@ Se obtuvieron las matricas de precisión, recall y f1-score para cada clase, as�
 
 ## Matrices de confusión
 
-```{python device}
+```{python conf_mat}
 #| echo: true
 #| eval: false
 #| warning: false
+#| python.reticulate: false
 
 conf_mat, axes = plt.subplots(1, 2, figsize=(20, 10), layout="constrained")
 
@@ -437,10 +479,6 @@ cbar2.ax.tick_params(labelsize=14)
 conf_mat.suptitle("Matriz de confusión para perfiles de expresión", fontsize=30)
 
 conf_mat.set_size_inches(20, 12)
-conf_mat.savefig(
-    "/mnt/c/Users/vrahu/Documents/Ismadlsh/CCG/2026-S5/Data_Science/res/NN/confusion_matrix_profiles_MLP.png",
-    dpi=300,
-)
 plt.show()
 ```
 
