@@ -76,12 +76,12 @@ from sklearn.metrics import (
     classification_report,
 )
 import matplotlib.pyplot as plt
-``` 
-
+```
 
 # Carga de Datos y preprocesamiento
 
 ## Lectura de datos y exploración inicial
+
 ```{python lectura}
 #| echo: true
 #| eval: false
@@ -98,12 +98,11 @@ print("Dimensionalidad de datos:", df_data.shape)
 class_u=df_cathegories.Categoria.unique()
 print("Categorías verdaderas únicas:", class_u)
 df_data.head()
-``` 
+```
 
 Se observo que el dataset contiene 20531 genes y 5 categorías de perfiles de expresión. Por ende los perfiles de expresión se tomaron como variables yua numericas mientras que las categorías el cual es la variable a predecir se deben transformar conserbando la información.
 
-
-### Categorias a numerico 
+### Categorias a numerico
 
 ```{python class_dic}
 #| echo: true
@@ -114,10 +113,9 @@ cat_ids={cat_u: i for i, cat_u in enumerate(class_u)}
 
 ids_cat={cat[1]:cat[0] for cat in cat_ids.items()}
 
-``` 
+```
 
-
-## Split de los datos 
+## Split de los datos
 
 Consiguientemente se dividieron los datos en un 80% para entrenamiento y un 20% para prueba, estratificando por la variable de categoría para mantener la proporción de clases en ambos conjuntos.
 
@@ -131,11 +129,11 @@ df_train, df_test = train_test_split(df_data, test_size=0.2, random_state=42, st
 
 print("Dimensionalidad de datos de entrenamiento:", df_train.shape)
 print("Dimensionalidad de datos de prueba:", df_test.shape)
-``` 
+```
 
-# Modelado 
+# Modelado
 
-## Creación data set 
+## Creación data set
 
 ```{python data_set_class}
 #| echo: true
@@ -176,7 +174,7 @@ class PerfilesDataset(Dataset):
 #asignar los datasets al objeto creado en la clase 
 dataset_train = PerfilesDataset(dataframe=df_train)
 dataset_test = PerfilesDataset(dataframe=df_test)
-``` 
+```
 
 ### Dataloader
 
@@ -191,8 +189,7 @@ batch_size = 8
 #crear los data loaders 
 dataloader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
 dataloader_test = DataLoader(dataset_test, batch_size=batch_size, shuffle=False)
-``` 
-
+```
 
 ## Arquitectura de la red neuronal
 
@@ -230,8 +227,7 @@ class MLP(nn.Module):
 # chargue to device
 red_mlp = MLP().to(device)
 print(red_mlp)
-``` 
-
+```
 
 ## Entrenamiento y evaluación de la red neuronal
 
@@ -246,7 +242,7 @@ Como parte de la arquitectura de la red se usaron la función de perdida por cru
 
 funcion_de_perdida = nn.CrossEntropyLoss()
 optimizador_de_pesos = torch.optim.Adam(red_mlp.parameters(), lr=0.0001)
-``` 
+```
 
 ### Función de entrenamiento
 
@@ -359,7 +355,7 @@ while conver < 3:
     if abs(accuracy - accuracy_b) < err:
         conver += 1
     accuracy_b = accuracy
-``` 
+```
 
 Durante la fase de entrenamiento se obtuvo un valor convergente de accuracy de 0.9937888198757764 en un total de 15 epocas.
 
@@ -385,15 +381,15 @@ report_dic=classification_report(cat_true, cat_pred, output_dict=True)
 df_report=pd.DataFrame(report_dic).transpose()
 ```
 
-| Class | precision | recall | f1-score | support |
-|:-----:|----------:|-------:|---------:|--------:|
-| 0 | 1.000000 | 1.000000 | 1.000000 | 27.000000 |
-| 1 | 1.000000 | 0.964286 | 0.981818 | 28.000000 |
-| 2 | 0.983607 | 1.000000 | 0.991736 | 60.000000 |
-| 3 | 1.000000 | 1.000000 | 1.000000 | 30.000000 |
-| 4 | 1.000000 | 1.000000 | 1.000000 | 16.000000 |
-| macro avg | 0.996721 | 0.992857 | 0.994711 | 161.000000 |
-| weighted avg | 0.993891 | 0.993789 | 0.993758 | 161.000000 |
+|    Class     | precision |   recall | f1-score |    support |
+|:------------:|----------:|---------:|---------:|-----------:|
+|      0       |  1.000000 | 1.000000 | 1.000000 |  27.000000 |
+|      1       |  1.000000 | 0.964286 | 0.981818 |  28.000000 |
+|      2       |  0.983607 | 1.000000 | 0.991736 |  60.000000 |
+|      3       |  1.000000 | 1.000000 | 1.000000 |  30.000000 |
+|      4       |  1.000000 | 1.000000 | 1.000000 |  16.000000 |
+|  macro avg   |  0.996721 | 0.992857 | 0.994711 | 161.000000 |
+| weighted avg |  0.993891 | 0.993789 | 0.993758 | 161.000000 |
 
 Se obtuvieron las matricas de precisión, recall y f1-score para cada clase, así como el promedio macro y ponderado. Como ya lo sugería el accuracy obtenido en el entrnamiento el desempeño en las metricas es muy elevado teniendo capacidad de predicción practicamente perfecta para 3 de las clases y para las otras dos clases se intuye que la presición baja de la clase 2 se debe a aquellas que esta prediciendo como las clase 1 y por ende el recall de la clase 1 es menor a 1.0.
 
@@ -446,8 +442,8 @@ conf_mat.savefig(
     dpi=300,
 )
 plt.show()
-``` 
+```
 
-![Matriz de confusión de MLP en ambos formatos, normalizada y absoluta](../res/NN/confusion_matrix_profiles_MLP.png){#fig-aligned-vs-time fig-pos="H" width="85%" fig-align="center"} 
+![Matriz de confusión de MLP en ambos formatos, normalizada y absoluta](../res/NN/confusion_matrix_profiles_MLP.png){#fig-aligned-vs-time fig-pos="H" width="85%" fig-align="center"}
 
 La matriz de confusión exiende de forma comprobatoria las asumciones de las metricas antes presentadas, ya que la categoria numero 1 esta siendo confundida con la categoria numero 2, mientras que las otras categorias no presentan confusión alguna. Esto sugiere que son perfiles de expresión más similares entre ambos tipos de cancer y que los demas cuentan con factores muy diferentes en los mismos, lo que los hacen más distinguibles.
